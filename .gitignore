@@ -112,3 +112,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Project ignores
+.vscode
+output
+script.txt
+config.txt
