@@ -7,13 +7,13 @@ class CommandDef(abc.ABC):
         pass
 
     def __call__(self,sim_context,*params):
-        self.run(self,sim_context,*params)
+        self.run(sim_context,*params)
 
 class SubCommand():
     def __init__(self,time,cmddef,*params):
         self.time=time #Time expected to execute the subcommand
         self.cmddef=cmddef #Command definition
-        self.params=params #Parameters passed to the definition
+        self.params=list(params) #Parameters passed to the definition
 
 class SubCmdQueue():
     def __init__(self,ls=None):
