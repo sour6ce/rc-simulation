@@ -97,6 +97,8 @@ class Application:
         '''
             Load the simulation script.
         '''
+        if not os.path.isfile(self.script_file):
+            print(f"Missing {self.script_file} file (script file).")
         f=open(self.script_file,'r')
         self.script=f.readlines()
         f.close()
@@ -133,6 +135,8 @@ class Application:
         '''
             Load the config from the config file. Overrides current stored configuration values.
         '''
+        if not os.path.isfile(self.config_file):
+            return self
         f=open(self.config_file,'r')
         lines=f.readlines()
         f.close()
@@ -141,5 +145,5 @@ class Application:
             if l.strip() and l.count('=')==1:
                 eq_pos=l.find('=')
                 self.config[l[:eq_pos].replace(' ','_')]=l[eq_pos+1:]
-        return self()
+        return self
                 
