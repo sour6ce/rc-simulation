@@ -17,6 +17,8 @@ class SimContext:
         '''
             Run one step of the simulation.
         '''
+        if len(self.p_queue)==0:
+            return False
         sc=self.p_queue()
 
         new_time=sc.time
@@ -27,7 +29,7 @@ class SimContext:
                 e.update(self)
         for guh in self.app.global_updates_hooks:
             if callable(guh):
-                guh(sim_context)
+                guh(self)
         
         for pre_cmd in self.app.pre_command_hooks:
             if callable(pre_cmd):
@@ -36,6 +38,7 @@ class SimContext:
         for post_cmd in self.app.post_command_hooks:
             if callable(post_cmd):
                 post_cmd(sc,self)
+        return True
 
 class SimElement(abc.ABC):
     def __init__(self,name,sim_context : SimContext,*args,**kwargs):
