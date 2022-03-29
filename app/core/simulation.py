@@ -26,7 +26,7 @@ class SimContext:
         if new_time!=self.time:
             self.time=new_time
             for e in self.elements:
-                e.update(self)
+                e.update()
         for guh in self.app.global_updates_hooks:
             if callable(guh):
                 guh(self)
@@ -34,7 +34,7 @@ class SimContext:
         for pre_cmd in self.app.pre_command_hooks:
             if callable(pre_cmd):
                 pre_cmd(sc,self)
-        sc.cmddef(self,sc.params)
+        sc.cmddef(self,*sc.params)
         for post_cmd in self.app.post_command_hooks:
             if callable(post_cmd):
                 post_cmd(sc,self)
