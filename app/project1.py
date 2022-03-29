@@ -1,3 +1,5 @@
+from queue import Queue
+import random
 import app.core.plugins as plug
 import app.core.simulation as sim
 import app.core.app as application
@@ -12,6 +14,8 @@ def is_ported(element:sim.SimElement):
     except:
         return False
   
+def resolve_element(name:str,sim_context:sim.SimContext)->sim.SimElement:
+    return next((e for e in sim_context.elements if e.name==name),None)
 
 class Cable():
     '''
@@ -19,7 +23,7 @@ class Cable():
     '''
     def __init__(self,port1,port2):
         self.ports=[port1,port2] #Ports which the cable is connected
-        self.data=False  #Bit sending by the cable
+        self.data='0'  #Bit sending by the cable
         self.transmitting=False #True if the cable is transmitting a signal
         
         self.ports[0].cable=self.ports[1].cable=self
@@ -56,6 +60,24 @@ class PC(sim.SimElement):
     def update(self):
         pass
 
+class Hub(sim.SimElement):
+    '''
+        Class that represents a hub in the simulation.
+    '''
+    def __init__(self,name,sim_context:sim.SimContext,ports='4',*args,**kwargs):
+        sim.SimElement.__init__(self,name,sim_context)
+        ports=int(ports)
+        self.ports=[Port(self,i+1) for i in range(ports)] #Create the amount of ports needed
+        self.input_port=-1 #Index of the port used as input
+        self.transmitting=False #True if the hub is transmitting a signal
+    
+    @classmethod
+    def get_element_type_name(cls):
+        return "hub"
+    
+    def update(self):
+        pass
+
 class CreateCMD(script.CommandDef):
     def run(self,sim_context:sim.SimContext,type_n,name,*args):
         sim_context.elements.append(sim_context.app.elements[type_n](name,sim_context,*args))
@@ -76,21 +98,41 @@ class DisconnectCMD(script.CommandDef):
             c.ports[1].cable=None
             del(c)
 
-class Hub(sim.SimElement):
-    '''
-        Class that represents a hub in the simulation.
-    '''
-    def __init__(self,name,sim_context:sim.SimContext,ports='4',*args,**kwargs):
-        sim.SimElement.__init__(self,name,sim_context)
-        ports=int(ports)
-        self.ports=[Port(self,i+1) for i in range(ports)] #Create the amount of ports needed
-    
-    @classmethod
-    def get_element_type_name(cls):
-        return "hub"
-    
-    def update(self):
-        pass
+def read_data(bfs_q:Queue,e:sim.SimElement):
+    if isinstance(e,PC):
+        e.output(f"{e.context.time} {e.name} recieve {e.port.cable.data}")
+    if isinstance(e,Hub):
+        i_port,index=next((port,port.id) for port in e.ports if port.cable.transmitting)
+        e.input_port=index
+        e.output(f"{e.context.time} {e.name} recieve {i_port.cable.data}")
+        bfs_q.put((1,e))
+        
+def write_data(bfs_q:Queue,e:sim.SimElement):
+    #TODO: Imp
+    pass
+
+class SendCMD(script.CommandDef):
+    def run(self, sim_context:sim.SimContext, host, data, *params):
+        host:PC=resolve_element(host,sim_context)
+        data_n=data[0]
+        data_r=data[1:]
+        q=Queue()
+        if host.port.cable.transmitting:
+            #TODO: Delay the sending
+            pass
+        host.port.cable.transmitting=True
+        host.port.cable.data=data_n
+        out_port:Port=next((p for p in host.port.cable.ports if p is not host.port))
+        q.put((0,out_port.element))
+        if host is not None:
+            while not q.empty():
+                op,e,d=q.get()
+                if (op==0):
+                    read_data(q,e)
+                else:
+                    write_data(q,e)
+            #TODO: Schedule the rest of the sending and the connection end
+                    
 
 class BasicInit(plug.PluginInit1):
     def run(self,app:application.Application,*args,**kwargs):
