@@ -70,7 +70,7 @@ class SimElement(abc.ABC):
         output_dir=self.context.app.output_dir
         output_file=os.path.join(output_dir,self.name+'.txt')
 
-        os.makedirs(output_file,exist_ok=True)
+        os.makedirs(output_dir,exist_ok=True)
         out=open(output_file,'a+')
         out.write(text+'\n')
         out.close()
