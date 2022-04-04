@@ -162,7 +162,7 @@ def end_transmition(bfs_q:Queue,e:sim.SimElement):
             c.transmitting=False
     if e.get_element_type_name()=='hub':
         i_port:Port=next(port for port in e.ports if port.id==e.input_port)
-        out_ports=(port for port in e.ports if port.id!=e.input_port and port.cable is not None)
+        out_ports=(port for port in e.ports if port.id!=e.input_port and port.cable is not None and port.cable.transmitting)
         if (i_port.cable is not None):
             i_port.cable.data='0'
             i_port.cable.transmitting=False
