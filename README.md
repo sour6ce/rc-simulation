@@ -18,3 +18,5 @@ La app utiliza determinados valores configurables en la simulación especificado
 ### Output
 
 La app crea(si no existe ya) un directorio `output` en el directorio de trabajo actual y escribe un archivo por cada elemento de la simulación informando de toda la información que envía y recibe. Se puede seleccionar un directorio distinto en el que escribir la salida con el parámetro `--output=[path]`.
+
+*NOTA: Para más detalle de la implementación de cada capa buscar en la carpeta* `docs` *el archivo correspondiente a la capa implementada con los detalles de la implementación*
