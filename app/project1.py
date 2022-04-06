@@ -143,7 +143,7 @@ def write_data(bfs_q:Queue,e:sim.SimElement):
     if e.get_element_type_name()=='hub':
         i_port=next(port for port in e.ports if port.id==e.input_port)
         data=i_port.cable.data
-        out_ports=(port for port in e.ports if port.id!=e.input_port and port.cable is not None)
+        out_ports=(port for port in e.ports if port.id!=e.input_port and port.cable is not None and not port.cable.transmitting)
         e.transmitting=True
         for port in out_ports:
             c:Cable=port.cable
@@ -152,7 +152,6 @@ def write_data(bfs_q:Queue,e:sim.SimElement):
             c.data=data
             e.output(f"{e.context.time} {port} send {data}")
             bfs_q.put((0,out_port.element))
-        bfs_q.put((1,e))
 
 def end_transmition(bfs_q:Queue,e:sim.SimElement):
     if e.get_element_type_name()=='pc':
@@ -168,7 +167,9 @@ def end_transmition(bfs_q:Queue,e:sim.SimElement):
             i_port.cable.transmitting=False
         e.transmitting=False
         for port in out_ports:
-            bfs_q.put(port.element)
+            c:Cable=port.cable
+            out_port:Port=next((p for p in c.ports if p is not port))
+            bfs_q.put(out_port.element)
 
 class EndSendingCMD(script.CommandDef):
     def run(self, sim_context, host, *params):
