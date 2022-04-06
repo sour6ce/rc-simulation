@@ -224,13 +224,13 @@ class SendCMD(script.CommandDef):
             if data_r is not None:
                 #Send the rest
                 sim_context.p_queue.add_early(script.SubCommand(
-                    sim_context.time+sim_context.app.config['signal_time'],
+                    sim_context.time+int(sim_context.app.config['signal_time']),
                     SendCMD(),
                     host.name,data_r,
                     *params))
             #Shutdown the transmitting
             sim_context.p_queue.add_early(script.SubCommand(
-                sim_context.time+sim_context.app.config['signal_time'],
+                sim_context.time+int(sim_context.app.config['signal_time']),
                 EndSendingCMD(),
                 host.name,
                 *params))
@@ -239,7 +239,7 @@ class SendCMD(script.CommandDef):
 
 class BasicInit(plug.PluginInit1):
     def run(self,app:application.Application,*args,**kwargs):
-        app.config['signal_time']=10 #default value of signal_time
+        app.config['signal_time']='10' #default value of signal_time
 
         #Script preprocessor that remove comments and empty lines
         app.script_pipe.append(lambda s:[l.replace('\n','') for l in s if l.strip() and l.strip()[0]!='#'])
