@@ -6,6 +6,12 @@ import app.core.script as script
 
 LOAD_ORDER=1
 
+#TODO: Internet Checksum Implementation
+# https://github.com/mdelatorre/checksum/blob/master/ichecksum.py
+# https://datatracker.ietf.org/doc/html/rfc1071
+def chksum(data:str) -> str:
+    pass
+
 def is_ported(element:sim.SimElement) -> bool:
     return element is PortedElement
       
@@ -178,9 +184,99 @@ def resolve_port(port) -> Port:
             app.Application.instance.simulation.elements if is_ported(e)) \
                 for p in e.ports if str(port)==str(p) ),None)
 
+class DataEater():
+    def __init__(self,frame_end_feedback) -> None:
+        self._fef=frame_end_feedback
+        self.__data=""
+        self.__data_size=0
+        
+        self.__expected_size=-1
+        
+        self.__reading=False
+        self.__finished=False
+        
+    def get_current_data(self) -> str:
+        return self.__data
+    
+    def __len__(self) -> int:
+        return self.__data_size
+    
+    def isreading(self) -> bool:
+        return self.__reading
+    
+    def isfinished(self) -> bool:
+        return self.__finished
+    
+    def get_header(self) -> str:
+        if self.__data_size>=48:
+            return self.__data[0:48]
+        else:
+            return None
+    
+    def get_target_mac(self) -> str:
+        if self.__data_size>=16:
+            return hex(int(self.__data[0:16],2))[2:].upper()
+        else:
+            return None
+        
+    def get_origin_mac(self) -> str:
+        if self.__data_size>=32:
+            return hex(int(self.__data[16:32],2))[2:].upper()
+        else:
+            return None
+        
+    def get_data_size(self) -> int:
+        if self.__data_size>=40:
+            return int(self.__data[32:40],2)
+        else:
+            return None
+        
+    def get_validation_size(self) -> int:
+        if self.__data_size>=48:
+            return int(self.__data[40:48],2)
+        else:
+            return None
+        
+    def get_data(self) -> str:
+        data_size=self.get_data_size()
+        if data_size is None:
+            return None
+        if self.__data_size>=48+data_size:
+            return hex(int(self.__data[48:48+data_size],2))[2:].upper()
+        else:
+            return None
+        
+    def get_validation(self) -> str:
+        data_size=self.get_data_size()
+        validation_size=self.get_validation_size()
+        if (data_size is None) or (validation_size is None):
+            return None
+        if self.__finished:
+            return hex(int(self.__data[48+data_size:],2))[2:].upper()
+        else:
+            return None
+        
+    def iscorrupt(self) -> bool:
+        data=self.get_data()
+        validation=self.get_validation()
+        if validation is None:
+            return False
+        else:
+            return chksum(data)==validation
+        
+    def put(self,one:bool) -> None:
+        if one:
+            self.__data+='1'
+        else:
+            self.__data+='0'
+        #TODO: Update expected size and finish with feedback and
+        #restart features
+    
+    #TODO: Clear buffer method and others
+
 #TODO: Util class to handle progressive reading of frames
 #This class should handle frame target check and data validation
-#for the element is in
+#for the element is in (in progress)
 #TODO: PC,Hub and Switches classes
 #TODO: Rewrite Send, Connect, Disconnect commands
 #TODO: Mac and SendFrame command classes
