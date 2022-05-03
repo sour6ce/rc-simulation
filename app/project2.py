@@ -177,4 +177,13 @@ def resolve_port(port) -> Port:
         next( (p for e in (e for e in \
             app.Application.instance.simulation.elements if is_ported(e)) \
                 for p in e.ports if str(port)==str(p) ),None)
-  
+
+#TODO: Util class to handle progressive reading of frames
+#This class should handle frame target check and data validation
+#for the element is in
+#TODO: PC,Hub and Switches classes
+#TODO: Rewrite Send, Connect, Disconnect commands
+#TODO: Mac and SendFrame command classes
+#TODO: Plugin Initialization
+#TODO: Data outputing
+#TODO: Testing
