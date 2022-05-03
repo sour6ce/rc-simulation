@@ -6,6 +6,10 @@ import app.core.script as script
 
 LOAD_ORDER=1
 
+MAC_BYTESIZE=16
+DATASIZE_BYTESIZE=8
+VALIDATIONSIZE_BYTESIZE=8
+
 #TODO: Internet Checksum Implementation
 # https://github.com/mdelatorre/checksum/blob/master/ichecksum.py
 # https://datatracker.ietf.org/doc/html/rfc1071
@@ -208,51 +212,61 @@ class DataEater():
         return self.__finished
     
     def get_header(self) -> str:
-        if self.__data_size>=48:
-            return self.__data[0:48]
+        if self.__data_size>=MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE:
+            return self.__data[0:MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE]
         else:
             return None
     
     def get_target_mac(self) -> str:
-        if self.__data_size>=16:
-            return hex(int(self.__data[0:16],2))[2:].upper()
+        if self.__data_size>=MAC_BYTESIZE:
+            return hex(int(self.__data[0:MAC_BYTESIZE],2))[2:].upper()
         else:
             return None
         
     def get_origin_mac(self) -> str:
-        if self.__data_size>=32:
-            return hex(int(self.__data[16:32],2))[2:].upper()
+        if self.__data_size>=MAC_BYTESIZE*2:
+            return hex(int(self.__data[MAC_BYTESIZE:MAC_BYTESIZE*2],2))[2:].upper()
         else:
             return None
         
     def get_data_size(self) -> int:
-        if self.__data_size>=40:
-            return int(self.__data[32:40],2)
+        if self.__data_size>=MAC_BYTESIZE*2+DATASIZE_BYTESIZE:
+            return int(self.__data[MAC_BYTESIZE*2:\
+                MAC_BYTESIZE*2+DATASIZE_BYTESIZE],2)
         else:
             return None
         
     def get_validation_size(self) -> int:
-        if self.__data_size>=48:
-            return int(self.__data[40:48],2)
+        if self.__data_size>=MAC_BYTESIZE*2+\
+            DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE:
+            return int(self.__data[MAC_BYTESIZE*2+DATASIZE_BYTESIZE:\
+                MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE],2)
         else:
             return None
         
     def get_data(self) -> str:
-        data_size=self.get_data_size()
+        data_size=self.get_data_size()*8
         if data_size is None:
             return None
-        if self.__data_size>=48+data_size:
-            return hex(int(self.__data[48:48+data_size],2))[2:].upper()
+        if self.__data_size>=\
+            MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE+\
+                data_size:
+            return hex(int(self.__data[\
+                MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE:\
+                    MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE+\
+                        data_size],2))[2:].upper()
         else:
             return None
         
     def get_validation(self) -> str:
-        data_size=self.get_data_size()
+        data_size=self.get_data_size()*8
         validation_size=self.get_validation_size()
         if (data_size is None) or (validation_size is None):
             return None
         if self.__finished:
-            return hex(int(self.__data[48+data_size:],2))[2:].upper()
+            return hex(int(self.__data[\
+                MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE+\
+                        data_size:],2))[2:].upper()
         else:
             return None
         
