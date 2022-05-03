@@ -33,6 +33,8 @@ class Application:
 
         self.simulation=sim.SimContext(self) #Current simulation information
 
+        Application.instance=self #Singleton implementation
+
     def resolve_command(self,cmd_name):
         '''
             Finds the command with the given name, public or private. Used to easy the sub-command creation. Prioritize public.
