@@ -1,4 +1,5 @@
 import abc
+from random import randint
 import app.core.plugins as plug
 import app.core.simulation as sim
 import app.core.app as app
@@ -9,6 +10,12 @@ LOAD_ORDER=1
 MAC_BYTESIZE=16
 DATASIZE_BYTESIZE=8
 VALIDATIONSIZE_BYTESIZE=8
+
+def btoh(data:str):
+    return hex(int(data,2))[2:].upper()
+
+def htob(data:str):
+    return bin(int(data,16))
 
 #Internet Checksum Implementation
 # https://github.com/mdelatorre/checksum/blob/master/ichecksum.py
@@ -177,10 +184,11 @@ class Port():
     
     def end_data(self) ->bool:
         if self.isconnected():
+            one=self.get_write_cable().sending_one()
             self.__write_cable.end()
             pe:PortedElement=self.get_connected_port().get_element()
             pe.__class__=PortedElement
-            pe.on_data_end(self.get_connected_port())
+            pe.on_data_end(self.get_connected_port(),one)
             return True
         else:
             return False
@@ -197,19 +205,33 @@ class PortedElement(sim.SimElement):
     def get_ports(self):
         return self.__ports.copy()
     
+    def has_port(self,port:Port) -> bool:
+        return next((p for p in self.__ports if p==port),None)!=None
+    
     @abc.abstractmethod
-    def on_data_receive(self,port:Port,One:bool):
+    def on_data_receive(self,port:Port,one:bool):
         '''
             Called each time the element get some data through some port
         '''
         pass
     
     @abc.abstractmethod
-    def on_data_end(self,port:Port):
+    def on_data_end(self,port:Port,one:bool):
         '''
             Called each time the element stop getting data through some port
         '''
         pass
+    
+    def send(self,port:Port,one:bool):
+        if next((p for p in self.__ports if p==port),None) is not None:
+            if one:
+                port.send_one()
+            else:
+                port.send_zero()
+                
+    def end_sending(self,port:Port):
+        if next((p for p in self.__ports if p==port),None) is not None:
+            port.end_data()
 
 def resolve_port(port) -> Port:
     if isinstance(port,Port):
@@ -341,10 +363,42 @@ class DataEater():
                 
                 self._fef()
 
-#TODO: Util class to handle progressive reading of frames
-#This class should handle frame target check and data validation
-#for the element is in (in progress)
-#TODO: PC,Hub and Switches classes
+class PC(PortedElement):
+    def __init__(self, name: str, sim_context: sim.SimContext, *args, **kwargs):
+        super().__init__(name, sim_context, 1, *args, **kwargs)
+        
+        self.__mac=''.join([hex(randint(0,15))[2:].upper() for i in range(4)])
+        def check_data_end():
+            if (self.__de.get_target_mac()==self.get_mac()):
+                if (self.__de.iscorrupt()):
+                    self.data_output(f"{app.Application.instance.simulation.time}"+\
+                        f"{self.__de.get_origin_mac()} {self.__de.get_data()}")
+        self.__de=DataEater(check_data_end)
+        
+    @classmethod
+    def get_element_type_name(cls):
+        return 'host'
+    
+    def set_mac(self,mac:str):
+        if int(mac,16)<=0xFFFF:
+            self.__mac=mac
+            
+    def get_mac(self)->str:
+        return self.__mac[:]
+    
+    def update(self):
+        pass
+    
+    def on_data_receive(self, port: Port, one: bool):
+        self.__de.put(one)
+        self.output(f"{self.context.time} {port} send {'1' if one else '0'}")
+        
+    def on_data_end(self, port: Port,one:bool):
+        pass
+    
+    
+
+#TODO: Hub and Switches classes
 #TODO: Rewrite Send, Connect, Disconnect commands
 #TODO: Mac and SendFrame command classes
 #TODO: Plugin Initialization
