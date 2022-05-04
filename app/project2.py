@@ -10,11 +10,41 @@ MAC_BYTESIZE=16
 DATASIZE_BYTESIZE=8
 VALIDATIONSIZE_BYTESIZE=8
 
-#TODO: Internet Checksum Implementation
+#Internet Checksum Implementation
 # https://github.com/mdelatorre/checksum/blob/master/ichecksum.py
 # https://datatracker.ietf.org/doc/html/rfc1071
 def chksum(data:str) -> str:
-    pass
+    data=data[:]
+    d_len=len(data)
+    #Put zeros in the back until reach a multiple of 8(looking forfull bytes)
+    if ((d_len%8)!=0):
+        data=''.join([data,''.join(('0'for i in range(8-(d_len%8)) ))])
+        d_len=((d_len//8)+1)*8
+        
+    #Separate for byte and turn it into int
+    data=[int(data[i:i+8],2) for i in range(0,d_len,8)]
+    d_len=d_len//8
+    
+    sum=0
+    
+    # make 16 bit words out of every two adjacent 8 bit words in the packet
+    # and add them up
+    for i in range(0,d_len,2):
+        if i + 1 >= d_len:
+            sum += (data[i]) & 0xFF
+        else:
+            w = (((data[i]) << 8) & 0xFF00) + ((data[i+1]) & 0xFF)
+            sum += w
+
+    # take only 16 bits out of the 32 bit sum and add up the carries
+    while (sum >> 16) > 0:
+        sum = (sum & 0xFFFF) + (sum >> 16)
+
+    # one's complement the result
+    sum = ~sum
+
+    return sum & 0xFFFF
+        
 
 def is_ported(element:sim.SimElement) -> bool:
     return element is PortedElement
