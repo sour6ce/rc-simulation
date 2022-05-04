@@ -74,3 +74,12 @@ class SimElement(abc.ABC):
         out=open(output_file,'a+')
         out.write(text+'\n')
         out.close()
+        
+    def data_output(self,text):
+        data_dir=self.context.app.output_dir
+        data_file=os.path.join(data_dir,self.name+'_data.txt')
+        
+        os.makedirs(data_dir,exist_ok=True)
+        out=open(data_file,'a+')
+        out.write(text+'\n')
+        out.close()
