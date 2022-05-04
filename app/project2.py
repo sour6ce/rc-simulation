@@ -16,14 +16,15 @@ VALIDATIONSIZE_BYTESIZE=8
 def chksum(data:str) -> str:
     data=data[:]
     d_len=len(data)
-    #Put zeros in the back until reach a multiple of 8(looking forfull bytes)
-    if ((d_len%8)!=0):
-        data=''.join([data,''.join(('0'for i in range(8-(d_len%8)) ))])
-        d_len=((d_len//8)+1)*8
+    # #Put zeros in the back until reach a multiple of 8(looking forfull bytes)
+    # if ((d_len%8)!=0):
+    #     data=''.join([data,''.join(('0'for i in range(8-(d_len%8)) ))])
+    #     d_len=((d_len//8)+1)*8
         
     #Separate for byte and turn it into int
-    data=[int(data[i:i+8],2) for i in range(0,d_len,8)]
-    d_len=d_len//8
+    data=[int(c,16) for c in data]
+    # data=[int(data[i:i+8],) for i in range(0,d_len,8)]
+    # d_len=d_len//8
     
     sum=0
     
@@ -262,7 +263,7 @@ class DataEater():
     def get_data_size(self) -> int:
         if self.__data_size>=MAC_BYTESIZE*2+DATASIZE_BYTESIZE:
             return int(self.__data[MAC_BYTESIZE*2:\
-                MAC_BYTESIZE*2+DATASIZE_BYTESIZE],2)
+                MAC_BYTESIZE*2+DATASIZE_BYTESIZE],2)*8
         else:
             return None
         
@@ -270,12 +271,12 @@ class DataEater():
         if self.__data_size>=MAC_BYTESIZE*2+\
             DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE:
             return int(self.__data[MAC_BYTESIZE*2+DATASIZE_BYTESIZE:\
-                MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE],2)
+                MAC_BYTESIZE*2+DATASIZE_BYTESIZE+VALIDATIONSIZE_BYTESIZE],2)*8
         else:
             return None
         
     def get_data(self) -> str:
-        data_size=self.get_data_size()*8
+        data_size=self.get_data_size()
         if data_size is None:
             return None
         if self.__data_size>=\
@@ -289,7 +290,7 @@ class DataEater():
             return None
         
     def get_validation(self) -> str:
-        data_size=self.get_data_size()*8
+        data_size=self.get_data_size()
         validation_size=self.get_validation_size()
         if (data_size is None) or (validation_size is None):
             return None
@@ -308,15 +309,37 @@ class DataEater():
         else:
             return chksum(data)==validation
         
+    def clear(self):
+        self.__finished=False
+        self.__reading=False
+        self.__data=""
+        self.__data_size=0
+        self.__expected_size=-1
+        
     def put(self,one:bool) -> None:
+        if self.isfinished():
+            self.clear()
+            
+        self.__reading=True
+        
         if one:
             self.__data+='1'
         else:
             self.__data+='0'
-        #TODO: Update expected size and finish with feedback and
-        #restart features
-    
-    #TODO: Clear buffer method and others
+            
+        self.__data_size+=1
+        
+        if self.__expected_size==-1:
+            if self.__data_size==MAC_BYTESIZE*2+DATASIZE_BYTESIZE+\
+                VALIDATIONSIZE_BYTESIZE:
+                self.__expected_size=MAC_BYTESIZE*2+DATASIZE_BYTESIZE+\
+                    VALIDATIONSIZE_BYTESIZE+self.get_data_size()*8+\
+                        self.get_validation_size()*8
+        else:
+            if self.__data_size==self.__expected_size:
+                self.__finished=True
+                
+                self._fef()
 
 #TODO: Util class to handle progressive reading of frames
 #This class should handle frame target check and data validation
