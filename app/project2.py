@@ -396,11 +396,45 @@ class PC(PortedElement):
     def on_data_end(self, port: Port,one:bool):
         pass
     
+class Hub(PortedElement):
+    #NOTE: In cases where to a hub reach 2 or more transmition at the same time
+    #each time a transmition reach, schedule an transmition checking for the hub
+    #this checking should look for the result of an accumulative XOR of the
+    #transmitions then send the data and reset the XOR value, if the checking
+    #executes with a reseted XOR value it means that is repeated
+    def __init__(self, name: str, sim_context: sim.SimContext, nports: int, *args, **kwargs):
+        super().__init__(name, sim_context, nports, *args, **kwargs)
+        
+        self.__data=False
+        self.__stacked=False
+        
+    def on_data_receive(self, port: Port, one: bool):
+        if self.has_port(port):
+            self.__data=(self.__data and one) or ((not self.__data) and (not one))
+            self.__stacked=True
+            
+            #TODO: Schedule command to check
+            
+    def check_send(self):
+        if self.__stacked:
+            self.__stacked=False
+            for p in self.get_ports():
+                self.send(p,self.__data)
+                
+    def on_data_receive(self, port: Port, one: bool):
+        pass
     
+    @classmethod
+    def get_element_type_name(cls):
+        return 'hub'
+    
+    def update(self):
+        pass
 
-#TODO: Hub and Switches classes
+#TODO: Switch class
 #TODO: Rewrite Send, Connect, Disconnect commands
 #TODO: Mac and SendFrame command classes
+#TODO: Hub checking help command
 #TODO: Plugin Initialization
 #TODO: Data outputing
 #TODO: Testing
