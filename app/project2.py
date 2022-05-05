@@ -369,7 +369,8 @@ class PC(PortedElement):
         
         self.__mac=''.join([hex(randint(0,15))[2:].upper() for i in range(4)])
         def check_data_end():
-            if (self.__de.get_target_mac()==self.get_mac()):
+            if (self.__de.get_target_mac()==self.get_mac() or\
+                self.__de.get_target_mac()=='FFFF'):
                 if (self.__de.iscorrupt()):
                     self.data_output(f"{app.Application.instance.simulation.time}"+\
                         f"{self.__de.get_origin_mac()} {self.__de.get_data()}")
@@ -397,32 +398,35 @@ class PC(PortedElement):
         pass
     
 class Hub(PortedElement):
-    #NOTE: In cases where to a hub reach 2 or more transmition at the same time
-    #each time a transmition reach, schedule an transmition checking for the hub
-    #this checking should look for the result of an accumulative XOR of the
-    #transmitions then send the data and reset the XOR value, if the checking
-    #executes with a reseted XOR value it means that is repeated
-    def __init__(self, name: str, sim_context: sim.SimContext, nports: int, *args, **kwargs):
+    #NOTE: The Hub only send the data of the first transmition that reach
+    #it and ignores others, its sended to every port except for the one
+    #with the input
+    def __init__(self, name: str, sim_context: sim.SimContext,\
+        nports: int, *args, **kwargs):
         super().__init__(name, sim_context, nports, *args, **kwargs)
         
-        self.__data=False
-        self.__stacked=False
+        self.__iport:Port=None
         
     def on_data_receive(self, port: Port, one: bool):
         if self.has_port(port):
-            self.__data=(self.__data and one) or ((not self.__data) and (not one))
-            self.__stacked=True
-            
-            #TODO: Schedule command to check
+            if self.__iport is None or self.__iport==port:
+                for p in (prt for prt in self.get_ports() if prt!=port):
+                    if one:p.send_one() 
+                    else: p.send_zero()
+                self.__iport=port
             
     def check_send(self):
-        if self.__stacked:
-            self.__stacked=False
+        if self.__stacked>0:
+            self.__stacked-=1
             for p in self.get_ports():
                 self.send(p,self.__data)
                 
-    def on_data_receive(self, port: Port, one: bool):
-        pass
+    def on_data_end(self, port: Port, one: bool):
+        if self.has_port(port):
+            if self.__iport==port:
+                for p in (prt for prt in self.get_ports() if prt!=port):
+                    p.end_data()
+                self.__iport=None
     
     @classmethod
     def get_element_type_name(cls):
