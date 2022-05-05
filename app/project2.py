@@ -414,12 +414,6 @@ class Hub(PortedElement):
                     if one:p.send_one() 
                     else: p.send_zero()
                 self.__iport=port
-            
-    def check_send(self):
-        if self.__stacked>0:
-            self.__stacked-=1
-            for p in self.get_ports():
-                self.send(p,self.__data)
                 
     def on_data_end(self, port: Port, one: bool):
         if self.has_port(port):
