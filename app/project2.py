@@ -371,9 +371,9 @@ class PC(PortedElement):
         def check_data_end():
             if (self.__de.get_target_mac()==self.get_mac() or\
                 self.__de.get_target_mac()=='FFFF'):
-                if (self.__de.iscorrupt()):
-                    self.data_output(f"{app.Application.instance.simulation.time}"+\
-                        f"{self.__de.get_origin_mac()} {self.__de.get_data()}")
+                self.data_output(f"{app.Application.instance.simulation.time}"+\
+                    f"{self.__de.get_origin_mac()} {self.__de.get_data()}"+\
+                        (f" ERROR" if (self.__de.iscorrupt()) else ""))
         self.__de=DataEater(check_data_end)
         
     @classmethod
