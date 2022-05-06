@@ -80,7 +80,7 @@ def is_ported(element: sim.SimElement) -> bool:
     return isinstance(element, PortedElement)
 
 
-def resolve_element(element) -> sim.SimElement:
+def resolve_element(element):
     if isinstance(element, sim.SimElement):
         return element
     else:
@@ -452,6 +452,8 @@ class PC(PortedElement):
         else:
             if self.__timer == 0:
                 self.get_ports()[0].end_data()
+            else:
+                self.__timer -= elapsed
 
     def cast(self, data: str):
         self.__sdata += data
@@ -601,7 +603,7 @@ class SendCMD(script.CommandDef):
     def run(self, sim_context, host, data, *params):
         host: PC = resolve_element(host)
         if (host is not None):
-            host.__class__ = app.Application.instance.elements['pc']
+            #host.__class__ = app.Application.instance.elements['pc']
             host.cast(data)
 
 
