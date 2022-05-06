@@ -536,17 +536,18 @@ class Switch(PortedElement):
         new_time = app.Application.instance.simulation.time
         elapsed = new_time-self.__last_update
         self.__last_update = new_time
-        frame, port = self.__fqueue.queue[0]
-        can_move_frame = (port == -1 and all((cur == '' for cur in self.__current))) or\
-            (self.__current[port] == '')
+        if not self.__fqueue.empty():
+            frame, port = self.__fqueue.queue[0]
+            can_move_frame = (port == -1 and all((cur == '' for cur in self.__current))) or\
+                (self.__current[port] == '')
 
-        if can_move_frame:
-            self.__fqueue.get()
-            self.__current = [frame if i == port or port == -1 else value
-                              for i, value in enumerate(self.__current)]
+            if can_move_frame:
+                self.__fqueue.get()
+                self.__current = [frame if i == port or port == -1 else value
+                                for i, value in enumerate(self.__current)]
 
-        self.__timers = [value-elapsed if self.__current[i] != ''
-                         else -1 for i, value in enumerate(self.__timers)]
+            self.__timers = [value-elapsed if self.__current[i] != ''
+                            else -1 for i, value in enumerate(self.__timers)]
 
         did_send = False
 
