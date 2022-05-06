@@ -1,4 +1,5 @@
 import abc
+from queue import Queue
 from random import randint
 import app.core.plugins as plug
 import app.core.simulation as sim
@@ -429,7 +430,81 @@ class Hub(PortedElement):
     def update(self):
         pass
 
-#TODO: Switch class
+class Switch(PortedElement):
+    def __init__(self, name: str, sim_context: sim.SimContext,\
+        nports: int, *args, **kwargs):
+        super().__init__(name, sim_context, nports, *args, **kwargs)
+        
+        def callable_factory(i:int):
+            def r():
+                self.__add_dfp_to_q(i)
+            return r
+        
+        self.__table={}
+        self.__fqueue=Queue()
+        self.__current=['' for i in range(nports)]
+        self.__des=[DataEater(callable_factory(i)) for i in range(nports)]
+        self.__last_update=0
+        self.__timers=[-1 for i in range(nports)]
+        
+    def __add_dfp_to_q(self,index:int):
+        de=self.__des[index]
+        if de.isfinished():
+            if (not de.iscorrupt()):
+                port=-1
+                if de.get_target_mac() in self.__table.keys():
+                    port=self.__table[de.get_target_mac()]
+                self.__fqueue.put((de.get_current_data(),port))
+                self.__table[de.get_origin_mac()]=index
+            
+    def update(self):
+        new_time=app.Application.instance.simulation.time
+        elapsed=new_time-self.__last_update
+        self.__last_update=new_time
+        frame,port=self.__fqueue.queue[0]
+        can_move_frame=(port==-1 and all((cur=='' for cur in self.__current))) or\
+            (self.__current[port]=='')
+            
+        if can_move_frame:
+            self.__current=[frame if i==port or port==-1 else value \
+                for i,value in enumerate(self.__current)]
+            
+        self.__timers=[value-elapsed if self.__current[i]!=''\
+            else 0 for i,value in enumerate(self.__timers)]
+        
+        did_send=False
+        
+        for i in range(len(self.get_ports())):
+            if self.__current[i]!='':
+                if self.__timers[i]==0:
+                    data=self.__current[i][0]
+                    self.__current[i]=self.__current[i][1:]
+                    if data==1:self.get_ports()[i].send_one()
+                    else: self.get_ports()[i].send_zero()
+                    did_send=True
+            else:
+                if self.__timers[i]==0: 
+                    self.get_ports()[i].end_data()
+                    self.__timers[i]-=1
+                    
+        if did_send: self.context.p_queue.add_early(script.SubCommand(
+            self.__current[i]+\
+                int(app.Application.instance.config['signal_time']),
+            BlankCMD()))
+        
+    def on_data_receive(self, port: Port, one: bool):
+        if self.has_port(port):
+            de:DataEater=next((self.__des[i] for i,p in \
+                enumerate(self.get_ports()) if p==port))
+            de.put(one)
+            
+    def on_data_end(self, port: Port, one: bool):
+        pass
+            
+class BlankCMD(script.CommandDef):
+    def run(self,sim_context,*params):
+        pass
+
 #TODO: Rewrite Send, Connect, Disconnect commands
 #TODO: Mac and SendFrame command classes
 #TODO: Hub checking help command
