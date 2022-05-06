@@ -13,6 +13,11 @@ DATASIZE_BYTESIZE = 8
 VALIDATIONSIZE_BYTESIZE = 8
 
 
+def schedule_blank(time):
+    app.Application.instance.simulation.p_queue.add_early(script.SubCommand(
+        time, BlankCMD()))
+
+
 def btoh(data: str):
     return hex(int(data, 2))[2:].upper()
 
@@ -390,6 +395,9 @@ class PC(PortedElement):
                                  f"{self.__de.get_origin_mac()} {self.__de.get_data()}" +
                                  (f" ERROR" if (self.__de.iscorrupt()) else ""))
         self.__de = DataEater(check_data_end)
+        self.__sdata = ""
+        self.__timer = 0
+        self.__las_update_time = 0
 
     @classmethod
     def get_element_type_name(cls):
@@ -403,11 +411,35 @@ class PC(PortedElement):
         return self.__mac[:]
 
     def update(self):
-        pass
+        newtime = self.context.time
+        elapsed = newtime-self.__las_update_time
+        self.__las_update_time = newtime
+
+        if self.__sdata != '':
+            self.__timer -= elapsed
+            if self.__timer == 0:
+                data = self.__sdata[0]
+                self.__sdata = self.__sdata[1:]
+                if data == 1:
+                    self.get_ports()[0].send_one()
+                else:
+                    self.get_ports()[0].send_zero()
+                self.__timer =\
+                    int(app.Application.instance.config['signal_time'])
+                schedule_blank(newtime+self.__timer)
+        else:
+            if self.__timer == 0:
+                self.get_ports()[0].end_data()
+
+    def cast(self, data: str):
+        self.__sdata += data
+        if self.__timer == 0:
+            schedule_blank(self.context.time)
 
     def on_data_receive(self, port: Port, one: bool):
         self.__de.put(one)
-        self.output(f"{self.context.time} {port} send {'1' if one else '0'}")
+        self.output(
+            f"{self.context.time} {port} recieved {'1' if one else '0'}")
 
     def on_data_end(self, port: Port, one: bool):
         pass
@@ -484,11 +516,12 @@ class Switch(PortedElement):
             (self.__current[port] == '')
 
         if can_move_frame:
+            self.__fqueue.get()
             self.__current = [frame if i == port or port == -1 else value
                               for i, value in enumerate(self.__current)]
 
         self.__timers = [value-elapsed if self.__current[i] != ''
-                         else 0 for i, value in enumerate(self.__timers)]
+                         else -1 for i, value in enumerate(self.__timers)]
 
         did_send = False
 
@@ -501,6 +534,8 @@ class Switch(PortedElement):
                         self.get_ports()[i].send_one()
                     else:
                         self.get_ports()[i].send_zero()
+                    self.__timers[i] =\
+                        int(app.Application.instance.config['signal_time'])
                     did_send = True
             else:
                 if self.__timers[i] == 0:
@@ -508,10 +543,8 @@ class Switch(PortedElement):
                     self.__timers[i] -= 1
 
         if did_send:
-            self.context.p_queue.add_early(script.SubCommand(
-                self.__current[i] +
-                int(app.Application.instance.config['signal_time']),
-                BlankCMD()))
+            schedule_blank(self.__current[i] +
+                           int(app.Application.instance.config['signal_time']))
 
     def on_data_receive(self, port: Port, one: bool):
         if self.has_port(port):
@@ -529,7 +562,6 @@ class BlankCMD(script.CommandDef):
 
 # TODO: Rewrite Send, Connect, Disconnect commands
 # TODO: Mac and SendFrame command classes
-# TODO: Hub checking help command
 # TODO: Plugin Initialization
 # TODO: Data outputing
 #TODO: Testing
