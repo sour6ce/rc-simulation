@@ -230,11 +230,11 @@ class Port():
 
 
 class PortedElement(sim.SimElement):
-    def __init__(self, name: str, sim_context: sim.SimContext, nports: int, *args, **kwargs):
+    def __init__(self, name: str, sim_context: sim.SimContext, nports: str, *args, **kwargs):
         sim.SimElement.__init__(self, name, sim_context,
                                 nports, *args, **kwargs)
 
-        self.__ports = [Port(self, i+1) for i in range(nports)]
+        self.__ports = [Port(self, i+1) for i in range(int(nports))]
 
     def get_ports(self):
         return self.__ports.copy()
@@ -402,7 +402,7 @@ class DataEater():
 
 class PC(PortedElement):
     def __init__(self, name: str, sim_context: sim.SimContext, *args, **kwargs):
-        super().__init__(name, sim_context, 1, *args, **kwargs)
+        super().__init__(name, sim_context, '1', *args, **kwargs)
 
         self.__mac = ''.join([hex(randint(0, 15))[2:].upper()
                              for i in range(4)])
@@ -510,10 +510,10 @@ class Switch(PortedElement):
 
         self.__table = {}
         self.__fqueue = Queue()
-        self.__current = ['' for i in range(nports)]
-        self.__des = [DataEater(callable_factory(i)) for i in range(nports)]
+        self.__current = ['' for i in range(int(nports))]
+        self.__des = [DataEater(callable_factory(i)) for i in range(int(nports))]
         self.__last_update = 0
-        self.__timers = [-1 for i in range(nports)]
+        self.__timers = [-1 for i in range(int(nports))]
 
     def __add_dfp_to_q(self, index: int):
         de = self.__des[index]
