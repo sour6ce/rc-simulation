@@ -76,7 +76,7 @@ def chksum(data: str) -> str:
 
 
 def is_ported(element: sim.SimElement) -> bool:
-    return element is PortedElement
+    return isinstance(element,PortedElement)
 
 
 def resolve_element(element) -> sim.SimElement:
@@ -223,8 +223,11 @@ class Port():
         else:
             return False
 
+    def getid(self):
+        return self.__id
+
     def __str__(self):
-        return str(self.__element)+'_'+str(self.id)
+        return str(self.__element)+'_'+str(self.__id)
 
 
 class PortedElement(sim.SimElement):
@@ -270,9 +273,9 @@ def resolve_port(port) -> Port:
     if isinstance(port, Port):
         return port
     else:
-        next((p for e in (e for e in
+        return next((p for e in (e for e in
                           app.Application.instance.simulation.elements if is_ported(e))
-              for p in e.ports if str(port) == str(p)), None)
+              for p in e.get_ports() if str(port) == str(p)), None)
 
 
 class DataEater():
