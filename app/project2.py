@@ -517,6 +517,10 @@ class Switch(PortedElement):
         self.__last_update = 0
         self.__timers = [-1 for i in range(int(nports))]
 
+    @classmethod
+    def get_element_type_name(cls):
+        return 'switch'
+
     def __add_dfp_to_q(self, index: int):
         de = self.__des[index]
         if de.isfinished():
