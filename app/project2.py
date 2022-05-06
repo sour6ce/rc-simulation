@@ -49,11 +49,12 @@ def chksum(data: str) -> str:
     #     d_len=((d_len//8)+1)*8
 
     # Separate for byte and turn it into int
-    data = [int(data[i:i+2], 16) if i + 1 >= d_len else data[i:]
-            for i in range(0, data, 2)]
+    data = [int(data[i:i+2], 16) if i + 1 < d_len else data[i:]
+            for i in range(0, d_len, 2)]
     # data=[int(data[i:i+8],) for i in range(0,d_len,8)]
     # d_len=d_len//8
 
+    d_len=(d_len+1)//2
     sum = 0
 
     # make 16 bit words out of every two adjacent 8 bit words in the packet
