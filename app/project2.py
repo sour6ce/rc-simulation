@@ -16,7 +16,7 @@ VALIDATION_BYTESIZE = 16
 
 def schedule_blank(time):
     app.Application.instance.simulation.p_queue.add_early(script.SubCommand(
-        time, BlankCMD()))
+        time, app.Application.instance.pv_commands['blank']))
 
 
 def complete_bytes(data: str, bytes: int) -> str:
@@ -135,8 +135,8 @@ class Port():
         port: Port = resolve_port(port)
         if self.isconnected() or port.isconnected():
             return False
-        wc = app.Application.instance.elements["__Cable"](self, port)
-        rc = app.Application.instance.elements["__Cable"](self, port)
+        wc = app.Application.instance.elements["__cable"](self, port)
+        rc = app.Application.instance.elements["__cable"](self, port)
 
         self.__write_cable = port.__read_cable = wc
 
@@ -661,6 +661,8 @@ class Init(plug.PluginInit1):
         #Add to the list the elements added by the plugin
         app.elements['host']=app.elements['pc']=PC
         app.elements['hub']=Hub
+        app.elements['switch']=Switch
+        app.elements['__cable']=Cable
         
         #Add commands to the list
         app.commands['create']=CreateCMD()
@@ -669,5 +671,7 @@ class Init(plug.PluginInit1):
         app.commands['send']=SendCMD()
         app.commands['send_frame']=SendFrameCMD()
         app.commands['mac']=MacCMD()
+        
+        app.pv_commands['blank']=BlankCMD()
 
 #TODO: Testing
