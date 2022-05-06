@@ -589,7 +589,7 @@ class SendCMD(script.CommandDef):
             host.cast(data)
 
 
-class Connect(script.CommandDef):
+class ConnectCMD(script.CommandDef):
     def run(self, sim_context, port1, port2, *params):
         port1 = resolve_port(port1)
         port2 = resolve_port(port2)
@@ -602,7 +602,7 @@ class Connect(script.CommandDef):
             raise InvalidScriptParameters(f"Invalid port names passed")
 
 
-class Disconnect(script.CommandDef):
+class DisconnectCMD(script.CommandDef):
     def run(self, sim_context, port, *params):
         port = resolve_port(port)
         if (port is not None):
