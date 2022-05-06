@@ -33,7 +33,7 @@ def btoh(data: str):
 
 
 def htob(data: str):
-    return bin(int(data, 16))
+    return bin(int(data, 16))[2:]
 
 # Internet Checksum Implementation
 # https://github.com/mdelatorre/checksum/blob/master/ichecksum.py
@@ -391,8 +391,8 @@ class DataEater():
             if self.__data_size == MAC_BYTESIZE*2+DATASIZE_BYTESIZE +\
                     VALIDATIONSIZE_BYTESIZE:
                 self.__expected_size = MAC_BYTESIZE*2+DATASIZE_BYTESIZE +\
-                    VALIDATIONSIZE_BYTESIZE+self.get_data_size()*8 +\
-                    self.get_validation_size()*8
+                    VALIDATIONSIZE_BYTESIZE+self.get_data_size() +\
+                    self.get_validation_size()
         else:
             if self.__data_size == self.__expected_size:
                 self.__finished = True
@@ -410,7 +410,7 @@ class PC(PortedElement):
         def check_data_end():
             if (self.__de.get_target_mac() == self.get_mac() or
                     self.__de.get_target_mac() == 'FFFF'):
-                self.data_output(f"{app.Application.instance.simulation.time}" +
+                self.data_output(f"{app.Application.instance.simulation.time} " +
                                  f"{self.__de.get_origin_mac()} {self.__de.get_data()}" +
                                  (f" ERROR" if (self.__de.iscorrupt()) else ""))
         self.__de = DataEater(check_data_end)
@@ -647,7 +647,7 @@ class SendFrameCMD(script.CommandDef):
         stream += complete_bytes(bin(VALIDATION_BYTESIZE//8),
                                  VALIDATIONSIZE_BYTESIZE//8)
         stream += complete_bytes(htob(data), data_len)
-        stream += complete_bytes(bin(cs), VALIDATIONSIZE_BYTESIZE//8)
+        stream += complete_bytes(bin(cs), VALIDATION_BYTESIZE//8)
         app.Application.instance.commands['send'].run(
             sim_context,
             host,
