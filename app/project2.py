@@ -183,8 +183,12 @@ class Port():
                 self.__write_cable.write_one()
             else:
                 self.__write_cable.write_zero()
+            self.get_element().output(\
+                f"{app.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
             pe: PortedElement = self.get_connected_port().get_element()
             pe.__class__ = PortedElement
+            pe.output(\
+                f"{app.Application.instance.simulation.time} {self} recieve {'1' if data else '0'}")
             pe.on_data_receive(self.get_connected_port(), data)
             return True
         else:
@@ -451,8 +455,6 @@ class PC(PortedElement):
 
     def on_data_receive(self, port: Port, one: bool):
         self.__de.put(one)
-        self.output(
-            f"{self.context.time} {port} recieved {'1' if one else '0'}")
 
     def on_data_end(self, port: Port, one: bool):
         pass
@@ -668,5 +670,4 @@ class Init(plug.PluginInit1):
         app.commands['send_frame']=SendFrameCMD()
         app.commands['mac']=MacCMD()
 
-# TODO: Data outputing
 #TODO: Testing
