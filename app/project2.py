@@ -591,6 +591,7 @@ class SendCMD(script.CommandDef):
     def run(self, sim_context, host, data, *params):
         host: PC = resolve_element(host)
         if (host is not None):
+            host.__class__=app.Application.instance.elements['pc']
             host.cast(data)
 
 
