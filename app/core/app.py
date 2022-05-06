@@ -61,7 +61,7 @@ class Application:
         
         #Order plugins according to the load order defined in them. If it's not defined is assumed that is zero.
         def plugin_lo(p):
-            next((c for n,c in inspect.getmembers(p) if (n=='LOAD_ORDER')),0)
+            return next((c for n,c in inspect.getmembers(p) if (n=='LOAD_ORDER')),0)
 
         self.plugins.sort(key=plugin_lo)
 
