@@ -433,7 +433,7 @@ class PC(PortedElement):
             if self.__timer == 0:
                 data = self.__sdata[0]
                 self.__sdata = self.__sdata[1:]
-                if data == 1:
+                if data == '1':
                     self.get_ports()[0].send_one()
                 else:
                     self.get_ports()[0].send_zero()
@@ -543,7 +543,7 @@ class Switch(PortedElement):
                 if self.__timers[i] == 0:
                     data = self.__current[i][0]
                     self.__current[i] = self.__current[i][1:]
-                    if data == 1:
+                    if data == '1':
                         self.get_ports()[i].send_one()
                     else:
                         self.get_ports()[i].send_zero()
