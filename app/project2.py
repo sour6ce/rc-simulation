@@ -140,6 +140,8 @@ class Port():
         if not self.isconnected():
             return False
         else:
+            self.end_data()
+            self.__con_port.end_data()
             del(self.__read_cable)
             del(self.__write_cable)
 
