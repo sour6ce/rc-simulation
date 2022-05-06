@@ -23,10 +23,9 @@ class SimContext:
 
         new_time=sc.time
 
-        if new_time!=self.time:
-            self.time=new_time
-            for e in self.elements:
-                e.update()
+        self.time=new_time
+        for e in self.elements:
+            e.update()
         for guh in self.app.global_updates_hooks:
             if callable(guh):
                 guh(self)
