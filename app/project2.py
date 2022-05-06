@@ -162,6 +162,8 @@ class Port():
                 self.__con_port.__read_cable =\
                 self.__con_port.__write_cable =\
                 self.__con_port.__con_port = None
+                
+            self.__con_port=None
 
             return True
 
