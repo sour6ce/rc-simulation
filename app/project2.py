@@ -160,7 +160,7 @@ class Port():
     def get_read_cable(self) -> Cable:
         return self.__read_cable
 
-    def get_connected_port(self) -> Port:
+    def get_connected_port(self):
         return self.__con_port
 
     def get_element(self) -> sim.SimElement:
