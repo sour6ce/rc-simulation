@@ -49,7 +49,7 @@ def chksum(data: str) -> str:
     #     d_len=((d_len//8)+1)*8
 
     # Separate for byte and turn it into int
-    data = [int(data[i:i+2], 16) if i + 1 < d_len else data[i:]
+    data = [int(data[i:i+2], 16) if i + 1 < d_len else int(data[i:],16)
             for i in range(0, d_len, 2)]
     # data=[int(data[i:i+8],) for i in range(0,d_len,8)]
     # d_len=d_len//8
@@ -180,14 +180,14 @@ class Port():
         return self.__element
 
     def __write_data(self, data) -> bool:
+        self.get_element().output(\
+            f"{app.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
         if self.isconnected():
             self.end_data()
             if data:
                 self.__write_cable.write_one()
             else:
                 self.__write_cable.write_zero()
-            self.get_element().output(
-                f"{app.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
             pe: PortedElement = self.get_connected_port().get_element()
             pe.output(
                 f"{app.Application.instance.simulation.time} {self} recieve {'1' if data else '0'}")
@@ -437,7 +437,7 @@ class PC(PortedElement):
         self.__las_update_time = newtime
 
         if self.__sdata != '':
-            if self.get_ports()[0].get_write_cable().sending():
+            if self.__timer>0:
                 self.__timer -= elapsed
             if self.__timer == 0:
                 data = self.__sdata[0]
