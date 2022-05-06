@@ -647,6 +647,26 @@ class SendFrameCMD(script.CommandDef):
             host,
             stream,
             *params)
-# TODO: Plugin Initialization
+        
+        
+class Init(plug.PluginInit1):
+    def run(self, app:app.Application, *args, **kwargs):
+        app.config['signal_time']='10' #default value of signal_time
+        
+        #Script preprocessor that remove comments and empty lines
+        app.script_pipe.append(lambda s:[l.replace('\n','') for l in s if l.strip() and l.strip()[0]!='#'])
+        
+        #Add to the list the elements added by the plugin
+        app.elements['host']=app.elements['pc']=PC
+        app.elements['hub']=Hub
+        
+        #Add commands to the list
+        app.commands['create']=CreateCMD()
+        app.commands['connect']=ConnectCMD()
+        app.commands['disconnect']=DisconnectCMD()
+        app.commands['send']=SendCMD()
+        app.commands['send_frame']=SendFrameCMD()
+        app.commands['mac']=MacCMD()
+
 # TODO: Data outputing
 #TODO: Testing
