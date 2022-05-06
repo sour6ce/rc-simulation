@@ -529,31 +529,33 @@ class Switch(PortedElement):
                 port = -1
                 if de.get_target_mac() in self.__table.keys():
                     port = self.__table[de.get_target_mac()]
-                self.__fqueue.put((de.get_current_data(), port))
                 self.__table[de.get_origin_mac()] = index
+                if (port!=index):
+                    self.__fqueue.put((de.get_current_data(), port,index))
+                schedule_blank(app.Application.instance.simulation.time)
 
     def update(self):
         new_time = app.Application.instance.simulation.time
         elapsed = new_time-self.__last_update
         self.__last_update = new_time
         if not self.__fqueue.empty():
-            frame, port = self.__fqueue.queue[0]
-            can_move_frame = (port == -1 and all((cur == '' for cur in self.__current))) or\
+            frame, port, input = self.__fqueue.queue[0]
+            can_move_frame = (port == -1 and all((cur == '' for i,cur in enumerate(self.__current) if i!=input))) or\
                 (self.__current[port] == '')
 
             if can_move_frame:
                 self.__fqueue.get()
-                self.__current = [frame if i == port or port == -1 else value
+                self.__current = [frame if i == port or (port == -1 and i!=input) else value
                                 for i, value in enumerate(self.__current)]
 
-            self.__timers = [value-elapsed if self.__current[i] != ''
-                            else -1 for i, value in enumerate(self.__timers)]
+        self.__timers = [value-elapsed if self.__current[i]!= ''
+                        else -1 for i, value in enumerate(self.__timers)]
 
         did_send = False
 
         for i in range(len(self.get_ports())):
             if self.__current[i] != '':
-                if self.__timers[i] == 0:
+                if self.__timers[i] <= 0:
                     data = self.__current[i][0]
                     self.__current[i] = self.__current[i][1:]
                     if data == '1':
@@ -564,12 +566,12 @@ class Switch(PortedElement):
                         int(app.Application.instance.config['signal_time'])
                     did_send = True
             else:
-                if self.__timers[i] == 0:
+                if self.__timers[i] <= 0:
                     self.get_ports()[i].end_data()
-                    self.__timers[i] -= 1
+                    self.__timers[i] = -1
 
         if did_send:
-            schedule_blank(self.__current[i] +
+            schedule_blank(new_time +
                            int(app.Application.instance.config['signal_time']))
 
     def on_data_receive(self, port: Port, one: bool):
