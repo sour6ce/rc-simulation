@@ -186,7 +186,6 @@ class Port():
             self.get_element().output(\
                 f"{app.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
             pe: PortedElement = self.get_connected_port().get_element()
-            pe.__class__ = PortedElement
             pe.output(\
                 f"{app.Application.instance.simulation.time} {self} recieve {'1' if data else '0'}")
             pe.on_data_receive(self.get_connected_port(), data)
@@ -217,7 +216,6 @@ class Port():
             one = self.get_write_cable().sending_one()
             self.__write_cable.end()
             pe: PortedElement = self.get_connected_port().get_element()
-            pe.__class__ = PortedElement
             pe.on_data_end(self.get_connected_port(), one)
             return True
         else:
@@ -436,7 +434,8 @@ class PC(PortedElement):
         self.__las_update_time = newtime
 
         if self.__sdata != '':
-            self.__timer -= elapsed
+            if self.get_ports()[0].get_write_cable().sending():
+                self.__timer -= elapsed
             if self.__timer == 0:
                 data = self.__sdata[0]
                 self.__sdata = self.__sdata[1:]
