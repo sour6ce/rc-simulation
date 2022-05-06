@@ -11,11 +11,21 @@ LOAD_ORDER = 1
 MAC_BYTESIZE = 16
 DATASIZE_BYTESIZE = 8
 VALIDATIONSIZE_BYTESIZE = 8
+VALIDATION_BYTESIZE = 16
 
 
 def schedule_blank(time):
     app.Application.instance.simulation.p_queue.add_early(script.SubCommand(
         time, BlankCMD()))
+
+
+def complete_bytes(data: str, bytes: int) -> str:
+    int(data, 2)
+    if (len(data) < bytes*8):
+        data = ('0'*((bytes*8)-len(data))) + data
+        return data
+    else:
+        return data[len(data)-(bytes*8):]
 
 
 def btoh(data: str):
@@ -563,8 +573,80 @@ class BlankCMD(script.CommandDef):
     def run(self, sim_context, *params):
         pass
 
-# TODO: Rewrite Send, Connect, Disconnect commands
-# TODO: Mac and SendFrame command classes
+
+class InvalidScriptParameters(Exception):
+    pass
+
+
+class MissingElement(Exception):
+    pass
+
+
+class SendCMD(script.CommandDef):
+    def run(self, sim_context, host, data, *params):
+        host: PC = resolve_element(host)
+        if (host is not None):
+            host.cast(data)
+
+
+class Connect(script.CommandDef):
+    def run(self, sim_context, port1, port2, *params):
+        port1 = resolve_port(port1)
+        port2 = resolve_port(port2)
+        if (port2 is not None and port1 is not None):
+            if (port1.isconnected() or port2.isconnected()):
+                raise InvalidScriptParameters(
+                    f"At least one of the given ports is already connected")
+            port1.connect(port2)
+        else:
+            raise InvalidScriptParameters(f"Invalid port names passed")
+
+
+class Disconnect(script.CommandDef):
+    def run(self, sim_context, port, *params):
+        port = resolve_port(port)
+        if (port is not None):
+            port.disconnect()
+        else:
+            raise InvalidScriptParameters(f"Invalid port names passed")
+
+
+class CreateCMD(script.CommandDef):
+    def run(self, sim_context: sim.SimContext, type_n, name, *args):
+        if not (type_n in app.Application.instance.elements.keys()):
+            raise MissingElement(
+                f"{type_n} is not a registered simulation element")
+        sim_context.elements.append(
+            sim_context.app.elements[type_n](name, sim_context, *args))
+
+
+class MacCMD(script.CommandDef):
+    def run(self, sim_context, host, address, *params):
+        int(address, 16)
+        host: PC = resolve_element(host)
+        if (host is not None):
+            host.set_mac(address)
+
+
+class SendFrameCMD(script.CommandDef):
+    def run(self, sim_context, host, mac, data, * params):
+        host: PC = resolve_element(host)
+        int(mac, 16)
+        int(data, 16)
+        stream = complete_bytes(htob(mac), MAC_BYTESIZE//8) +\
+            complete_bytes(htob(host.get_mac()), MAC_BYTESIZE//8)
+        data_len = (len(data)+1)//2
+        stream += complete_bytes(bin(data_len), DATASIZE_BYTESIZE//8)
+        cs = chksum(data)
+        stream += complete_bytes(bin(VALIDATION_BYTESIZE//8),
+                                 VALIDATIONSIZE_BYTESIZE//8)
+        stream += complete_bytes(htob(data), data_len)
+        stream += complete_bytes(bin(cs), VALIDATIONSIZE_BYTESIZE//8)
+        app.Application.instance.commands['send'].run(
+            sim_context,
+            host,
+            stream,
+            *params)
 # TODO: Plugin Initialization
 # TODO: Data outputing
 #TODO: Testing
