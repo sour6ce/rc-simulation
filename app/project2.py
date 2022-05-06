@@ -134,8 +134,8 @@ class Port():
 
     def connect(self, port) -> bool:
         port: Port = resolve_port(port)
-        if self.isconnected() or port.isconnected():
-            return False
+        self.disconnect()
+        port.disconnect()
         wc = app.Application.instance.elements["__cable"](self, port)
         rc = app.Application.instance.elements["__cable"](self, port)
 
