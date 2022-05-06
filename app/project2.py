@@ -54,7 +54,7 @@ def chksum(data: str) -> str:
     # data=[int(data[i:i+8],) for i in range(0,d_len,8)]
     # d_len=d_len//8
 
-    d_len=(d_len+1)//2
+    d_len = (d_len+1)//2
     sum = 0
 
     # make 16 bit words out of every two adjacent 8 bit words in the packet
@@ -77,7 +77,7 @@ def chksum(data: str) -> str:
 
 
 def is_ported(element: sim.SimElement) -> bool:
-    return isinstance(element,PortedElement)
+    return isinstance(element, PortedElement)
 
 
 def resolve_element(element) -> sim.SimElement:
@@ -162,8 +162,8 @@ class Port():
                 self.__con_port.__read_cable =\
                 self.__con_port.__write_cable =\
                 self.__con_port.__con_port = None
-                
-            self.__con_port=None
+
+            self.__con_port = None
 
             return True
 
@@ -186,10 +186,10 @@ class Port():
                 self.__write_cable.write_one()
             else:
                 self.__write_cable.write_zero()
-            self.get_element().output(\
+            self.get_element().output(
                 f"{app.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
             pe: PortedElement = self.get_connected_port().get_element()
-            pe.output(\
+            pe.output(
                 f"{app.Application.instance.simulation.time} {self} recieve {'1' if data else '0'}")
             pe.on_data_receive(self.get_connected_port(), data)
             return True
@@ -275,8 +275,8 @@ def resolve_port(port) -> Port:
         return port
     else:
         return next((p for e in (e for e in
-                          app.Application.instance.simulation.elements if is_ported(e))
-              for p in e.get_ports() if str(port) == str(p)), None)
+                                 app.Application.instance.simulation.elements if is_ported(e))
+                     for p in e.get_ports() if str(port) == str(p)), None)
 
 
 class DataEater():
@@ -513,7 +513,8 @@ class Switch(PortedElement):
         self.__table = {}
         self.__fqueue = Queue()
         self.__current = ['' for i in range(int(nports))]
-        self.__des = [DataEater(callable_factory(i)) for i in range(int(nports))]
+        self.__des = [DataEater(callable_factory(i))
+                      for i in range(int(nports))]
         self.__last_update = 0
         self.__timers = [-1 for i in range(int(nports))]
 
@@ -597,7 +598,7 @@ class SendCMD(script.CommandDef):
     def run(self, sim_context, host, data, *params):
         host: PC = resolve_element(host)
         if (host is not None):
-            host.__class__=app.Application.instance.elements['pc']
+            host.__class__ = app.Application.instance.elements['pc']
             host.cast(data)
 
 
@@ -659,29 +660,30 @@ class SendFrameCMD(script.CommandDef):
             host,
             stream,
             *params)
-        
-        
+
+
 class Init(plug.PluginInit1):
-    def run(self, app:app.Application, *args, **kwargs):
-        app.config['signal_time']='10' #default value of signal_time
-        
-        #Script preprocessor that remove comments and empty lines
-        app.script_pipe.append(lambda s:[l.replace('\n','') for l in s if l.strip() and l.strip()[0]!='#'])
-        
-        #Add to the list the elements added by the plugin
-        app.elements['host']=app.elements['pc']=PC
-        app.elements['hub']=Hub
-        app.elements['switch']=Switch
-        app.elements['__cable']=Cable
-        
-        #Add commands to the list
-        app.commands['create']=CreateCMD()
-        app.commands['connect']=ConnectCMD()
-        app.commands['disconnect']=DisconnectCMD()
-        app.commands['send']=SendCMD()
-        app.commands['send_frame']=SendFrameCMD()
-        app.commands['mac']=MacCMD()
-        
-        app.pv_commands['blank']=BlankCMD()
+    def run(self, app: app.Application, *args, **kwargs):
+        app.config['signal_time'] = '10'  # default value of signal_time
+
+        # Script preprocessor that remove comments and empty lines
+        app.script_pipe.append(lambda s: [l.replace(
+            '\n', '') for l in s if l.strip() and l.strip()[0] != '#'])
+
+        # Add to the list the elements added by the plugin
+        app.elements['host'] = app.elements['pc'] = PC
+        app.elements['hub'] = Hub
+        app.elements['switch'] = Switch
+        app.elements['__cable'] = Cable
+
+        # Add commands to the list
+        app.commands['create'] = CreateCMD()
+        app.commands['connect'] = ConnectCMD()
+        app.commands['disconnect'] = DisconnectCMD()
+        app.commands['send'] = SendCMD()
+        app.commands['send_frame'] = SendFrameCMD()
+        app.commands['mac'] = MacCMD()
+
+        app.pv_commands['blank'] = BlankCMD()
 
 #TODO: Testing
