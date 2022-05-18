@@ -55,3 +55,9 @@ class TestData(unittest.TestCase):
         c = SimData(int(a)-int(b))
 
         self.assertEqual(int(c), 42)
+        
+    def test_slice_get(self):
+        a = SimData('1001101')
+        
+        self.assertEqual(a[2:-1].tobin(),'0110')
+        

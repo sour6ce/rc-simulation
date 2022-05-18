@@ -46,11 +46,17 @@ class SimData():
     def insert(self, index: int, value: bool) -> None:
         self.data.insert(index, value)
 
+    def delete(self, index: int) -> bool:
+        return self.data.pop(index)
+
     def __str__(self) -> str:
         return self.tobin()
 
     def __repr__(self) -> str:
         return repr(list(self.tobin()))
+
+    def __getitem__(self, key) -> Self | bool:
+        return SimData(self.data[key])
 
     def __len__(self) -> int:
         return len(self.data)
