@@ -43,3 +43,15 @@ class TestData(unittest.TestCase):
         b.insert(0, True)
 
         self.assertNotEqual(a.tohex(True), b.tohex(True))
+
+    def test_ctor_int(self):
+        a = SimData(40)
+
+        self.assertEqual(a.tohex(), '28')
+
+    def test_int_workflow(self):
+        a = SimData(56)
+        b = SimData(14)
+        c = SimData(int(a)-int(b))
+
+        self.assertEqual(int(c), 42)

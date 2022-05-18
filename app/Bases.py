@@ -6,7 +6,7 @@ class SimData():
     __match_args__ = ("data")
     data = []
 
-    def __init__(self, data: str | List[bool] | Self | None = None):
+    def __init__(self, data: str | int | List[bool] | Self | None = None):
         match data:
             case str():
                 data = data.replace(' ', '')
@@ -30,6 +30,8 @@ class SimData():
                 self.data: List[bool] = data.copy()
             case None:
                 pass
+            case int():
+                self.__init__(bin(data)[2:])
             case _:
                 raise ValueError(
                     "data argument should be a string of mostly 1's or 0's" +
@@ -67,3 +69,6 @@ class SimData():
         if (len(r) % 2 != 0 and complete_bytes):
             return ''.join(['0', r])
         return r
+
+    def __int__(self) -> int:
+        return int(self.tobin(), 2)
