@@ -1,7 +1,7 @@
 from typing import List
 
 
-def uint(n: str | int | List[bool] | None) -> int:
+def uint(n: str | int | List[bool] | List[int] | bytes | None) -> int:
     val: int = 0
     match n:
         case str():
@@ -32,6 +32,11 @@ def uint(n: str | int | List[bool] | None) -> int:
             return val
         case int():
             return n
+        case bytes():
+            for i in n:
+                val <<= 8
+                val += i
+            return val
         case None:
             return 0
         case _:
@@ -80,6 +85,16 @@ def itoil(n: int) -> List[int]:
 def itobl(n: int) -> List[bool]:
     n = uint(n)
     return [False if v <= 0 else True for v in itoil(n)]
+
+
+def itob(n: int) -> bytes:
+    n = uint(n)
+    r = []
+    while(n > 0):
+        r.append(n & 0xFF)
+        n >>= 8
+    r.reverse()
+    return r if len(r) != 0 else [0]
 
 
 def bit_size(n: int) -> int:
