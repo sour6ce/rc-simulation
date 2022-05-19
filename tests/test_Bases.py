@@ -1,63 +1,34 @@
+from random import randint
 import unittest
-from app.Bases import *
+from app.bases import *
+from app.bitwork import *
 
 
-class TestData(unittest.TestCase):
-    def test_repr(self):
-        a = SimData()
-        a.data = [True, True, False, True]
-        self.assertEqual(repr(a), repr(['1', '1', '0', '1']))
+class TestChecksumAl(unittest.TestCase):
+    def test1(self):
+        a = uint('0x15')
+        b = uint(21)
 
-    def test_str(self):
-        a = SimData()
-        a.data = [True, True, False, True]
-        self.assertEqual(str(a), '1101')
+        self.assertEqual(a, b)
+        self.assertEqual(chksum(a), chksum(b))
 
-    def test_tobin_cb(self):
-        a = SimData()
-        a.data = [True, True, True, False, True]
-        self.assertEqual(a.tobin(True), '00011101')
+    def test2(self):
+        a = uint('FF A9 30 B5')
+        b = uint(byteFormat(uint('FF')) +
+                 byteFormat(uint(169)) +
+                 byteFormat(uint('0011 0000 1011 0101')))
 
-    def test_hexform_coff(self):
-        a = SimData()
-        a.data = [True, True, True, False, True]
-        self.assertEqual(a.tohex(), '1D')
+        self.assertEqual(a, b)
 
-    def test_hexform_con(self):
-        a = SimData()
-        a.data = [True, True, False, True]
-        self.assertEqual(a.tohex(True), '0D')
+        self.assertEqual(chksum(a), chksum(b))
 
-    def test_ctor_vs_hex(self):
-        a = SimData('1111 0111 1001 1010 0000')
-        self.assertEqual(a.tohex(True), '0F79A0')
+    def test3(self):
+        a = [randint(1, 1 << 30) for i in range(100)]
+        b = a[100:]
+        a = a[:100]
 
-    def test_ctor_bl(self):
-        a = SimData([True, False, False, False, True])
-        self.assertEqual(a.tobin(True), '00010001')
-
-    def test_ctor_copy(self):
-        a = SimData('FF 00')
-        b = SimData(a)
-
-        b.insert(0, True)
-
-        self.assertNotEqual(a.tohex(True), b.tohex(True))
-
-    def test_ctor_int(self):
-        a = SimData(40)
-
-        self.assertEqual(a.tohex(), '28')
-
-    def test_int_workflow(self):
-        a = SimData(56)
-        b = SimData(14)
-        c = SimData(int(a)-int(b))
-
-        self.assertEqual(int(c), 42)
-        
-    def test_slice_get(self):
-        a = SimData('1001101')
-        
-        self.assertEqual(a[2:-1].tobin(),'0110')
-        
+        for i, j in zip(a, b):
+            if (i == j):
+                self.assertEqual(chksum(i), chksum(j))
+            else:
+                self.assertNotEqual(chksum(i), chksum(j))

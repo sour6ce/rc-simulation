@@ -1,80 +1,178 @@
-from typing import List
+from typing import Callable, List, Tuple
 from typing_extensions import Self
 
+from app.bitwork import bit_append, bit_chop, bit_sub, byteFormat, uint
 
-class SimData():
-    __match_args__ = ("data")
-    data = []
 
-    def __init__(self, data: str | int | List[bool] | Self | None = None):
-        match data:
-            case str():
-                data = data.replace(' ', '')
-                val: int = 0
-                try:
-                    val = int(data, 2)
-                except:
-                    try:
-                        val = int(data, 16)
-                    except:
-                        raise ValueError(
-                            "data argument should be a string of mostly 1's or 0's" +
-                            ", a list of booleans or another SimData")
-                data = bin(val)[2:]
-                self.data: List[bool] =\
-                    [True if c == '1' else False
-                        for c in data if c == '0' or c == '1']
-            case SimData():
-                self.data: List[bool] = data.data.copy()
-            case [*_data] if all(isinstance(i, bool) for i in _data):
-                self.data: List[bool] = data.copy()
-            case None:
-                pass
-            case int():
-                self.__init__(bin(data)[2:])
-            case _:
-                raise ValueError(
-                    "data argument should be a string of mostly 1's or 0's" +
-                    ", a list of booleans or another SimData")
+def chksum(data: int) -> int:
+    data = byteFormat(data, format='$n:c$')
+    d_len = len(data)
 
-    def getData(self) -> List[bool]:
-        return self.data
+    # Separate each byte and turn it into int
+    data = [int(data[i:i+2], 16) if i + 1 < d_len else int(data[i:], 16)
+            for i in range(0, d_len, 2)]
 
-    def __eq__(self, __o: object) -> bool:
-        return all((i == j for i, j in zip(self.data, SimData(__o).data)))
+    d_len = (d_len+1)//2
+    sum = 0
 
-    def insert(self, index: int, value: bool) -> None:
-        self.data.insert(index, value)
+    # make 16 bit words out of every two adjacent 8 bit words in the packet
+    # and add them up
+    for i in range(0, d_len, 2):
+        if i + 1 >= d_len:
+            sum += (data[i]) & 0xFF
+        else:
+            w = (((data[i]) << 8) & 0xFF00) + ((data[i+1]) & 0xFF)
+            sum += w
 
-    def delete(self, index: int) -> bool:
-        return self.data.pop(index)
+    # take only 16 bits out of the 32 bit sum and add up the carries
+    while (sum >> 16) > 0:
+        sum = (sum & 0xFFFF) + (sum >> 16)
 
-    def __str__(self) -> str:
-        return self.tobin()
+    # one's complement the result
+    sum = ~sum
 
-    def __repr__(self) -> str:
-        return repr(list(self.tobin()))
+    return sum & 0xFFFF
 
-    def __getitem__(self, key) -> Self | bool:
-        return SimData(self.data[key])
+
+MAC_BYTESIZE = 2
+DATASIZE_BYTESIZE = 1
+VALIDATIONSIZE_BYTESIZE = 1
+VALIDATION_BYTESIZE = 2
+MACSECTION_BYTESIZE = MAC_BYTESIZE*2
+HEADER_BYTESIZE = MACSECTION_BYTESIZE+DATASIZE_BYTESIZE +\
+    VALIDATIONSIZE_BYTESIZE
+
+
+class DataEater():
+    __data = 0
+    __data_size = 0
+
+    def __init__(self, frame_end_feedback: Callable | None = None,
+                 data_insertion_feedback: Callable | None = None,):
+        self.__fef: List[Callable] = [frame_end_feedback] \
+            if frame_end_feedback != None else []
+        self.__dif: List[Callable] = [data_insertion_feedback] \
+            if data_insertion_feedback != None else []
+
+        self.clear()
+
+    def get_current_data(self) -> int:
+        return self.__data
 
     def __len__(self) -> int:
-        return len(self.data)
+        return self.__data_size
 
-    def tobin(self, complete_bytes=False) -> str:
-        d_len = len(self)
-        r = ''.join('1' if v else '0' for v in self.data)
-        if (d_len % 8 != 0 and complete_bytes):
-            return ''.join([((((d_len//8)+1)*8)-d_len)*'0', r])
-        return r
+    def isfinished(self) -> bool:
+        self.try_calc_tsize()
+        return self.__finished
 
-    def tohex(self, complete_bytes=False) -> str:
-        d_len = len(self)
-        b = int(self.tobin(True), 2)
-        r = str.upper(hex(b)[2:])
-        if (len(r) % 2 != 0 and complete_bytes):
-            return ''.join(['0', r])
-        return r
+    def get_header(self) -> Tuple[int, int] | None:
+        if len(self)//8 >= HEADER_BYTESIZE:
+            return (bit_chop(self.__data, len(self),
+                             HEADER_BYTESIZE*8,
+                             HEADER_BYTESIZE*8), HEADER_BYTESIZE*8)
+        else:
+            return None
 
-    def __int__(self) -> int:
-        return int(self.tobin(), 2)
+    def get_target_mac(self) -> Tuple[int, int] | None:
+        if len(self)//8 >= MAC_BYTESIZE:
+            return (bit_chop(self.__data, len(self),
+                             MAC_BYTESIZE*8,
+                             MAC_BYTESIZE*8), MAC_BYTESIZE*8)
+        else:
+            return None
+
+    def get_origin_mac(self) -> Tuple[int, int] | None:
+        if len(self)//8 >= MACSECTION_BYTESIZE:
+            return (bit_chop(self.__data, len(self),
+                             MAC_BYTESIZE*8,
+                             MACSECTION_BYTESIZE*8), MAC_BYTESIZE*8)
+        else:
+            return None
+
+    def get_data_size(self) -> Tuple[int, int] | None:
+        if len(self)//8 >= MACSECTION_BYTESIZE+DATASIZE_BYTESIZE:
+            return (bit_chop(self.__data, len(self),
+                             DATASIZE_BYTESIZE*8,
+                             MACSECTION_BYTESIZE*8+DATASIZE_BYTESIZE*8), DATASIZE_BYTESIZE*8)
+        else:
+            return None
+
+    def get_validation_size(self) -> Tuple[int, int] | None:
+        return (VALIDATION_BYTESIZE, VALIDATIONSIZE_BYTESIZE*8)
+
+    def get_data(self) -> Tuple[int, int] | None:
+        data_size = self.get_data_size()[0]*8
+        if data_size is None:
+            return None
+        if len(self) >= HEADER_BYTESIZE*8 + data_size:
+            return (bit_chop(self.__data, len(self),
+                             data_size,
+                             HEADER_BYTESIZE*8+data_size), data_size)
+        else:
+            return None
+
+    def get_validation(self) -> Tuple[int, int] | None:
+        data_size = self.get_data_size()[0]*8
+        validation_size = self.get_validation_size()[0]*8
+        if (data_size is None) or (validation_size is None):
+            return None
+        if self.__finished:
+            return (bit_chop(self.__data, len(self),
+                             validation_size,
+                             len(self)), validation_size)
+        else:
+            return None
+
+    def iscorrupt(self) -> bool:
+        data = self.get_data()[0]
+        validation = self.get_validation()[0]
+        if validation is None:
+            return False
+        else:
+            return chksum(data) == validation
+
+    def clear(self) -> None:
+        self.__finished = False
+        self.__data = 0
+        self.__data_size = 0
+        self.__expected_size = -1
+
+    def put(self, one: bool) -> None:
+        if self.isfinished():
+            self.clear()
+
+        self.__data = bit_append(self.__data, uint([one]))
+
+        self.__data_size += 1
+
+        self.try_calc_tsize()
+
+        [call() for call in self.__dif]
+        if self.isfinished():
+            [call() for call in self.__fef]
+
+    def try_calc_tsize(self):
+        if self.__expected_size == -1:
+            data_size = self.get_data_size()[0]
+            val_size = self.get_validation_size()[0]
+            if data_size is not None and val_size is not None:
+                self.__expected_size = HEADER_BYTESIZE*8+data_size +\
+                    val_size
+            else:
+                self.__expected_size = -1
+        else:
+            if len(self) == self.__expected_size:
+                self.__finished = True
+
+    def add_data_insertion_callback(self, call: Callable) -> None:
+        self.__dif.append(call)
+
+    def remove_data_insertion_callback(self, call: Callable) -> None:
+        self.__dif.remove(call)
+
+    def add_frame_end_callback(self, call: Callable) -> None:
+        self.__fef.append(call)
+
+    def remove_frame_end_callback(self, call: Callable) -> None:
+        self.__fef.remove(call)
