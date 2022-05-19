@@ -94,7 +94,7 @@ def itob(n: int) -> bytes:
         r.append(n & 0xFF)
         n >>= 8
     r.reverse()
-    return r if len(r) != 0 else [0]
+    return bytes(r) if len(r) != 0 else bytes([0])
 
 
 def bit_size(n: int) -> int:
@@ -144,7 +144,7 @@ def bit_set(n: int, index: int = 0, v: bool | int | None = 1) -> int:
 
 def bit_chop(n: int, allsize: int, section_size: int, end: int) -> int:
     rest = allsize-end
-    return (n & (uint((section_size*8)*'1') << rest)) >> rest
+    return (n & (uint((section_size)*'1') << rest)) >> rest
 
 
 def bit_mask(size: int) -> int:

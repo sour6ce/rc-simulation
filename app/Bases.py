@@ -102,9 +102,10 @@ class DataEater():
         return (VALIDATION_BYTESIZE, VALIDATIONSIZE_BYTESIZE*8)
 
     def get_data(self) -> Tuple[int, int] | None:
-        data_size = self.get_data_size()[0]*8
+        data_size = self.get_data_size()
         if data_size is None:
             return None
+        data_size = data_size[0]*8
         if len(self) >= HEADER_BYTESIZE*8 + data_size:
             return (bit_chop(self.__data, len(self),
                              data_size,
@@ -113,10 +114,12 @@ class DataEater():
             return None
 
     def get_validation(self) -> Tuple[int, int] | None:
-        data_size = self.get_data_size()[0]*8
-        validation_size = self.get_validation_size()[0]*8
+        data_size = self.get_data_size()
+        validation_size = self.get_validation_size()
         if (data_size is None) or (validation_size is None):
             return None
+        data_size = data_size[0]*8
+        validation_size = validation_size[0]*8
         if self.__finished:
             return (bit_chop(self.__data, len(self),
                              validation_size,
@@ -125,12 +128,14 @@ class DataEater():
             return None
 
     def iscorrupt(self) -> bool:
-        data = self.get_data()[0]
-        validation = self.get_validation()[0]
-        if validation is None:
+        data = self.get_data()
+        validation = self.get_validation()
+        if validation is None or data is None:
             return False
         else:
-            return chksum(data) == validation
+            data = data[0]
+            validation = validation[0]
+            return chksum(data) != validation
 
     def clear(self) -> None:
         self.__finished = False
@@ -154,9 +159,11 @@ class DataEater():
 
     def try_calc_tsize(self):
         if self.__expected_size == -1:
-            data_size = self.get_data_size()[0]
-            val_size = self.get_validation_size()[0]
+            data_size = self.get_data_size()
+            val_size = self.get_validation_size()
             if data_size is not None and val_size is not None:
+                data_size = data_size[0]*8
+                val_size = val_size[0]*8
                 self.__expected_size = HEADER_BYTESIZE*8+data_size +\
                     val_size
             else:
@@ -185,18 +192,18 @@ def frame_build(target_mac: int, origin_mac: int,  data: int) -> Tuple[int, int]
 
     r = 0
     r |= target_mac & bit_mask(MAC_BYTESIZE*8)
-    r << (MAC_BYTESIZE*8)
+    r <<= (MAC_BYTESIZE*8)
     r |= origin_mac & bit_mask(MAC_BYTESIZE*8)
-    r << (DATASIZE_BYTESIZE*8)
+    r <<= (DATASIZE_BYTESIZE*8)
 
     data_size = len(byteFormat(data, format="$n:c$", mode='b'))//8
 
     r |= data_size & bit_mask(DATASIZE_BYTESIZE*8)
-    r << (VALIDATIONSIZE_BYTESIZE*8)
+    r <<= (VALIDATIONSIZE_BYTESIZE*8)
     r |= VALIDATION_BYTESIZE & bit_mask(VALIDATIONSIZE_BYTESIZE*8)
-    r << (data_size*8)
-    r |= data & bit_mask(data_size)
-    r << (VALIDATION_BYTESIZE*8)
+    r <<= (data_size*8)
+    r |= data & bit_mask(data_size*8)
+    r <<= (VALIDATION_BYTESIZE*8)
     r |= chksum(data) & bit_mask(VALIDATION_BYTESIZE*8)
 
     return (r, HEADER_BYTESIZE*8+data_size*8+VALIDATION_BYTESIZE*8)
