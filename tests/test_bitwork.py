@@ -31,3 +31,18 @@ class TestFormat(unittest.TestCase):
         part2 = byteFormat(258, format='$n:4$', mode='h')
         part3 = byteFormat(1, format='$n:2$', mode='h')
         self.assertEqual('000A010201', part1+part2+part3)
+
+    def test_complete(self):
+        a = byteFormat(15, format="$n:c$", mode='b')
+        b = byteFormat(255, format="$n:c$", mode='b')
+
+        self.assertTrue(len(a) == len(b))
+        self.assertEqual(a, '00001111')
+        self.assertEqual(b, '11111111')
+
+        c = byteFormat(15, format="$n:c$", mode='h')
+        d = byteFormat(170, format="$n:c$", mode='h')
+
+        self.assertTrue(len(c) == len(d))
+        self.assertEqual(c, '0F')
+        self.assertEqual(d, 'AA')

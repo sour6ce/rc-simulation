@@ -130,3 +130,7 @@ def bit_set(n: int, index: int = 0, v: bool | int | None = 1) -> int:
 def bit_chop(n: int, allsize: int, section_size: int, end: int) -> int:
     rest = allsize-end
     return (n & (uint((section_size*8)*'1') << rest)) >> rest
+
+
+def bit_mask(size: int) -> int:
+    return ((1 << size)-1)

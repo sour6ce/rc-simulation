@@ -1,7 +1,7 @@
 from typing import Callable, List, Tuple
 from typing_extensions import Self
 
-from app.bitwork import bit_append, bit_chop, bit_sub, byteFormat, uint
+from app.bitwork import bit_append, bit_chop, bit_mask, bit_sub, byteFormat, uint
 
 
 def chksum(data: int) -> int:
@@ -176,3 +176,27 @@ class DataEater():
 
     def remove_frame_end_callback(self, call: Callable) -> None:
         self.__fef.remove(call)
+
+
+def frame_build(target_mac: int, origin_mac: int,  data: int) -> Tuple[int, int]:
+    origin_mac = uint(origin_mac)
+    target_mac = uint(target_mac)
+    data = uint(data)
+
+    r = 0
+    r |= target_mac & bit_mask(MAC_BYTESIZE*8)
+    r << (MAC_BYTESIZE*8)
+    r |= origin_mac & bit_mask(MAC_BYTESIZE*8)
+    r << (DATASIZE_BYTESIZE*8)
+
+    data_size = len(byteFormat(data, format="$n:c$", mode='b'))//8
+
+    r |= data_size & bit_mask(DATASIZE_BYTESIZE*8)
+    r << (VALIDATIONSIZE_BYTESIZE*8)
+    r |= VALIDATION_BYTESIZE & bit_mask(VALIDATIONSIZE_BYTESIZE*8)
+    r << (data_size*8)
+    r |= data & bit_mask(data_size)
+    r << (VALIDATION_BYTESIZE*8)
+    r |= chksum(data) & bit_mask(VALIDATION_BYTESIZE*8)
+
+    return (r, HEADER_BYTESIZE*8+data_size*8+VALIDATION_BYTESIZE*8)
