@@ -149,3 +149,9 @@ def bit_chop(n: int, allsize: int, section_size: int, end: int) -> int:
 
 def bit_mask(size: int) -> int:
     return ((1 << size)-1)
+
+
+def bit_negate(n: int) -> int:
+    n = uint(n)
+    n = itobl(n)
+    return uint([not v for v in n])
