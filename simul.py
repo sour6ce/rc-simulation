@@ -1,9 +1,13 @@
+import logging
+from sys import stdout
 import fire
 import importlib
 import os
 from app.core.main import Application
 
 def run_app(*args,**kwargs):
+    logging.basicConfig(stream=stdout,level=logging.INFO,force=True)
+    
     app=Application(os.path.dirname(os.path.realpath(__file__)))
             
     if ('config' in kwargs.keys()):
