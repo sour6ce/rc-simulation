@@ -3,8 +3,7 @@ from queue import Queue
 from random import randint
 import app.core.plugins as plug
 import app.core.simulation as sim
-import app.core.app as app
-import app.core.script as script
+import app.core.main as main
 
 LOAD_ORDER = 1
 
@@ -15,8 +14,8 @@ VALIDATION_BYTESIZE = 16
 
 
 def schedule_blank(time):
-    app.Application.instance.simulation.p_queue.add_early(script.SubCommand(
-        time, app.Application.instance.pv_commands['blank']))
+    main.Application.instance.simulation.p_queue.add_early(main.SubCommand(
+        time, main.Application.instance.pv_commands['blank']))
 
 
 def complete_bytes(data: str, bytes: int) -> str:
@@ -88,7 +87,7 @@ def resolve_element(element):
         if port is not None:
             return port.get_element()
         else:
-            return next((e for e in app.Application.instance.simulation.elements
+            return next((e for e in main.Application.instance.simulation.elements
                          if e.name == str(element)), None)
 
 
@@ -136,8 +135,8 @@ class Port():
         port: Port = resolve_port(port)
         self.disconnect()
         port.disconnect()
-        wc = app.Application.instance.elements["__cable"](self, port)
-        rc = app.Application.instance.elements["__cable"](self, port)
+        wc = main.Application.instance.elements["__cable"](self, port)
+        rc = main.Application.instance.elements["__cable"](self, port)
 
         self.__write_cable = port.__read_cable = wc
 
@@ -181,7 +180,7 @@ class Port():
 
     def __write_data(self, data) -> bool:
         self.get_element().output(\
-            f"{app.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
+            f"{main.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
         if self.isconnected():
             self.end_data()
             if data:
@@ -190,7 +189,7 @@ class Port():
                 self.__write_cable.write_zero()
             pe: PortedElement = self.get_connected_port().get_element()
             pe.output(
-                f"{app.Application.instance.simulation.time} {self} recieve {'1' if data else '0'}")
+                f"{main.Application.instance.simulation.time} {self} recieve {'1' if data else '0'}")
             pe.on_data_receive(self.get_connected_port(), data)
             return True
         else:
@@ -275,7 +274,7 @@ def resolve_port(port) -> Port:
         return port
     else:
         return next((p for e in (e for e in
-                                 app.Application.instance.simulation.elements if is_ported(e))
+                                 main.Application.instance.simulation.elements if is_ported(e))
                      for p in e.get_ports() if str(port) == str(p)), None)
 
 
@@ -412,7 +411,7 @@ class PC(PortedElement):
         def check_data_end():
             if (self.__de.get_target_mac() == self.get_mac() or
                     self.__de.get_target_mac() == 'FFFF'):
-                self.data_output(f"{app.Application.instance.simulation.time} " +
+                self.data_output(f"{main.Application.instance.simulation.time} " +
                                  f"{self.__de.get_origin_mac()} {self.__de.get_data()}" +
                                  (f" ERROR" if (self.__de.iscorrupt()) else ""))
         self.__de = DataEater(check_data_end)
@@ -447,7 +446,7 @@ class PC(PortedElement):
                 else:
                     self.get_ports()[0].send_zero()
                 self.__timer =\
-                    int(app.Application.instance.config['signal_time'])
+                    int(main.Application.instance.config['signal_time'])
                 schedule_blank(newtime+self.__timer)
         else:
             if self.__timer == 0:
@@ -534,10 +533,10 @@ class Switch(PortedElement):
                 self.__table[de.get_origin_mac()] = index
                 if (port!=index):
                     self.__fqueue.put((de.get_current_data(), port,index))
-                schedule_blank(app.Application.instance.simulation.time)
+                schedule_blank(main.Application.instance.simulation.time)
 
     def update(self):
-        new_time = app.Application.instance.simulation.time
+        new_time = main.Application.instance.simulation.time
         elapsed = new_time-self.__last_update
         self.__last_update = new_time
         if not self.__fqueue.empty():
@@ -565,7 +564,7 @@ class Switch(PortedElement):
                     else:
                         self.get_ports()[i].send_zero()
                     self.__timers[i] =\
-                        int(app.Application.instance.config['signal_time'])
+                        int(main.Application.instance.config['signal_time'])
                     did_send = True
             else:
                 if self.__timers[i] <= 0:
@@ -574,7 +573,7 @@ class Switch(PortedElement):
 
         if did_send:
             schedule_blank(new_time +
-                           int(app.Application.instance.config['signal_time']))
+                           int(main.Application.instance.config['signal_time']))
 
     def on_data_receive(self, port: Port, one: bool):
         if self.has_port(port):
@@ -586,7 +585,7 @@ class Switch(PortedElement):
         pass
 
 
-class BlankCMD(script.CommandDef):
+class BlankCMD(main.CommandDef):
     def run(self, sim_context, *params):
         pass
 
@@ -599,7 +598,7 @@ class MissingElement(Exception):
     pass
 
 
-class SendCMD(script.CommandDef):
+class SendCMD(main.CommandDef):
     def run(self, sim_context, host, data, *params):
         host: PC = resolve_element(host)
         if (host is not None):
@@ -607,7 +606,7 @@ class SendCMD(script.CommandDef):
             host.cast(data)
 
 
-class ConnectCMD(script.CommandDef):
+class ConnectCMD(main.CommandDef):
     def run(self, sim_context, port1, port2, *params):
         port1 = resolve_port(port1)
         port2 = resolve_port(port2)
@@ -620,7 +619,7 @@ class ConnectCMD(script.CommandDef):
             raise InvalidScriptParameters(f"Invalid port names passed")
 
 
-class DisconnectCMD(script.CommandDef):
+class DisconnectCMD(main.CommandDef):
     def run(self, sim_context, port, *params):
         port = resolve_port(port)
         if (port is not None):
@@ -629,16 +628,16 @@ class DisconnectCMD(script.CommandDef):
             raise InvalidScriptParameters(f"Invalid port names passed")
 
 
-class CreateCMD(script.CommandDef):
+class CreateCMD(main.CommandDef):
     def run(self, sim_context: sim.SimContext, type_n, name, *args):
-        if not (type_n in app.Application.instance.elements.keys()):
+        if not (type_n in main.Application.instance.elements.keys()):
             raise MissingElement(
                 f"{type_n} is not a registered simulation element")
         sim_context.elements.append(
             sim_context.app.elements[type_n](name, sim_context, *args))
 
 
-class MacCMD(script.CommandDef):
+class MacCMD(main.CommandDef):
     def run(self, sim_context, host, address, *params):
         int(address, 16)
         host: PC = resolve_element(host)
@@ -646,7 +645,7 @@ class MacCMD(script.CommandDef):
             host.set_mac(address)
 
 
-class SendFrameCMD(script.CommandDef):
+class SendFrameCMD(main.CommandDef):
     def run(self, sim_context, host, mac, data, * params):
         host: PC = resolve_element(host)
         int(mac, 16)
@@ -660,7 +659,7 @@ class SendFrameCMD(script.CommandDef):
                                  VALIDATIONSIZE_BYTESIZE//8)
         stream += complete_bytes(htob(data), data_len)
         stream += complete_bytes(bin(cs), VALIDATION_BYTESIZE//8)
-        app.Application.instance.commands['send'].run(
+        main.Application.instance.commands['send'].run(
             sim_context,
             host,
             stream,
@@ -668,7 +667,7 @@ class SendFrameCMD(script.CommandDef):
 
 
 class Init(plug.PluginInit1):
-    def run(self, app: app.Application, *args, **kwargs):
+    def run(self, app: main.Application, *args, **kwargs):
         app.config['signal_time'] = '10'  # default value of signal_time
 
         # Script preprocessor that remove comments and empty lines

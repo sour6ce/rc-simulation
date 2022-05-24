@@ -2,7 +2,7 @@ from queue import Queue
 import app.core.plugins as plug
 import app.core.simulation as sim
 import app.core.app as application
-import app.core.script as script
+import app.core.script as main
 
 LOAD_ORDER=0
 
@@ -81,11 +81,11 @@ class Hub(sim.SimElement):
     def update(self):
         pass
 
-class CreateCMD(script.CommandDef):
+class CreateCMD(main.CommandDef):
     def run(self,sim_context:sim.SimContext,type_n,name,*args):
         sim_context.elements.append(sim_context.app.elements[type_n](name,sim_context,*args))
 
-class ConnectCMD(script.CommandDef):
+class ConnectCMD(main.CommandDef):
     def run(self,sim_context:sim.SimContext,port1,port2,*args):
         port1=resolve_port(port1,sim_context)
         port2=resolve_port(port2,sim_context)
@@ -108,7 +108,7 @@ def search_root(p:Port)->sim.SimElement:
            next_p=next((p for p in c.ports if p is not i_port))
            return search_root(next_p)
 
-class DisconnectCMD(script.CommandDef):
+class DisconnectCMD(main.CommandDef):
     def run(self, sim_context:sim.SimContext, port, *params):
         port=resolve_port(port,sim_context)
         if(port is not None):
@@ -171,7 +171,7 @@ def end_transmition(bfs_q:Queue,e:sim.SimElement):
             out_port:Port=next((p for p in c.ports if p is not port))
             bfs_q.put(out_port.element)
 
-class EndSendingCMD(script.CommandDef):
+class EndSendingCMD(main.CommandDef):
     def run(self, sim_context, host, *params):
         host:PC=resolve_element(host,sim_context)
         q=Queue()
@@ -183,7 +183,7 @@ class EndSendingCMD(script.CommandDef):
                 e=q.get()
                 end_transmition(q,e)
     
-class SendCMD(script.CommandDef):
+class SendCMD(main.CommandDef):
     def run(self, sim_context:sim.SimContext, host, data, *params):
         host:PC=resolve_element(host,sim_context)
         data_n=data[0] #Current bit to send
@@ -195,7 +195,7 @@ class SendCMD(script.CommandDef):
         if host is not None and host.port.cable is not None:
             if host.port.cable.transmitting:
                 #Delay the current sending a time different for each host
-                sim_context.p_queue.add_early(script.SubCommand(
+                sim_context.p_queue.add_early(main.SubCommand(
                     sim_context.time+(
                     hash(host.name)
                     %
@@ -223,13 +223,13 @@ class SendCMD(script.CommandDef):
             #Schedule the rest of the sending and the connection end
             if data_r is not None:
                 #Send the rest
-                sim_context.p_queue.add_early(script.SubCommand(
+                sim_context.p_queue.add_early(main.SubCommand(
                     sim_context.time+int(sim_context.app.config['signal_time']),
                     SendCMD(),
                     host.name,data_r,
                     *params))
             #Shutdown the transmitting
-            sim_context.p_queue.add_early(script.SubCommand(
+            sim_context.p_queue.add_early(main.SubCommand(
                 sim_context.time+int(sim_context.app.config['signal_time']),
                 EndSendingCMD(),
                 host.name,
