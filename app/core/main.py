@@ -253,6 +253,12 @@ class SubCommand():
         self.cmddef = cmddef  # Command definition
         self.params = list(params)  # Parameters passed to the definition
 
+    def __str__(self) -> str:
+        return (f"{self.time} {type(self.cmddef).name} " + ' '.join(self.params))
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 class SubCmdQueue():
     def __init__(self, ls=None):
