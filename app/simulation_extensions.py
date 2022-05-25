@@ -11,9 +11,9 @@ LOAD_ORDER = -1
 
 
 def schedule_forced_update(time: int, early=True) -> None:
-    time = uint(time)
+    time = Application.instance.simulation.time+int(time)
     if next((cmd for cmd in Application.instance.simulation.p_queue.list if
-            cmd.time == Application.instance.simulation.time+time), None) is not None:
+            cmd.time == time), None) is not None:
         return
     if early:
         Application.instance.simulation.p_queue.add_early(main.SubCommand(
