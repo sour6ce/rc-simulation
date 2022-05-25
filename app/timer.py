@@ -10,6 +10,7 @@ class Timer(sim.SimElement):
         self.curent_time = int(time)
         self.initial_time = int(time)
         self.initial_total_time: int = sim_context.time
+        self.finished: bool = False
         self.__cb: List[Callable] = []
         schedule_forced_update(self.initial_time)
         super().__init__(name, sim_context, time, *args, **kwargs)
@@ -19,11 +20,13 @@ class Timer(sim.SimElement):
         return 'timer'
 
     def update(self):
+        if self.finished:
+            return
         ctime = Application.instance.simulation.time
         self.curent_time = self.initial_time-(ctime-self.initial_total_time)
         if self.curent_time == 0:
             [c() for c in self.__cb if callable(c)]
-        return super().update()
+            self.finished = True
 
     def add_time_passed_callback(self, call: Callable) -> None:
         self.__cb.append(call)
