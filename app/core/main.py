@@ -72,11 +72,11 @@ class Application:
 
         # Get initialization classes for each stage
         self.first_inits = [c for plugin in self.plugins for n, c in inspect.getmembers(
-            plugin) if inspect.isclass(c) and issubclass(c, PluginInit1)]
+            plugin) if inspect.isclass(c) and issubclass(c, PluginInit1) and (not inspect.isabstract(c))]
         self.second_inits = [c for plugin in self.plugins for n, c in inspect.getmembers(
-            plugin) if inspect.isclass(c) and issubclass(c, PluginInit2)]
+            plugin) if inspect.isclass(c) and issubclass(c, PluginInit2) and (not inspect.isabstract(c))]
         self.third_inits = [c for plugin in self.plugins for n, c in inspect.getmembers(
-            plugin) if inspect.isclass(c) and issubclass(c, PluginInit3)]
+            plugin) if inspect.isclass(c) and issubclass(c, PluginInit3) and (not inspect.isabstract(c))]
         return self
 
     def run_init1(self):
