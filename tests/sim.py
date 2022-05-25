@@ -56,6 +56,7 @@ class SimulationTest(unittest.TestCase):
         logging.basicConfig(
             filename=os.path.join(app.output_dir, 'out.log'),
             level=logging.DEBUG,
+            filemode='w',
             force=True
         )
 
