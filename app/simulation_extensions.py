@@ -50,7 +50,7 @@ class WrapperCMD(main.CommandDef):
 class PrintCMD(main.CommandDef):
     def run(self, sim_context: sim.SimContext, msg: str = 'DEBUG_PRINT',
             level: str = '10',  *params):
-        logging.log(uint(level), msg)
+        logging.log(int(level), msg)
 
 
 def basic_wrap_handler(keyword: str, originalcmd: str, *params: List[str]):
