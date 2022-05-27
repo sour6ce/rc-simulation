@@ -11,7 +11,7 @@ def isported(element: SimElement) -> bool:
 def get_ports_byname(port: str) -> Iterable[Port]:
     port = str(port)
     return (p for e in Application.instance.simulation.elements if isported(e)
-            for p in e if str(p) == port)
+            for p in e.get_ports() if str(p) == port)
 
 
 def get_port_byname(port: str) -> Port | None:

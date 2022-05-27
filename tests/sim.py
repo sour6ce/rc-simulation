@@ -2,7 +2,10 @@ import logging
 import os
 from typing import Callable
 import unittest
-from app.core.main import Application
+from app.bitwork import byteFormat
+from app.core.main import Application, SimContext
+from app.belements import PortedElement
+from app.port import Port
 
 
 class SimulationTest(unittest.TestCase):
@@ -33,6 +36,10 @@ class SimulationTest(unittest.TestCase):
                 app.config_file = kwargs['config']
 
         app.scan_plugins().import_plugins().run_init1().run_init2().run_init3()
+
+        app.elements['dispenser'] = Dispenser
+        app.elements['lector'] = Lector
+
         app.load_configuration()
 
         if callable(wrap_handler):
@@ -67,3 +74,79 @@ class SimulationTest(unittest.TestCase):
 
     def advance(self):
         return Application.instance.simulation.advance()
+
+
+class Dispenser(PortedElement):
+    def __init__(self, name: str, sim_context: SimContext, *args, **kwargs):
+        super().__init__(name, sim_context, 1, *args, **kwargs)
+
+        def log_sending(one: bool):
+            logging.info(f"Dispenser start sending a bit:" +
+                         f"\ttime:{Application.instance.simulation.time}" +
+                         f"\tname:{self.name}" +
+                         f"\n\tvalue: {'1' if one else '0'}")
+
+        def log_finished(one: bool):
+            logging.info(f"Dispenser end sending a bit:" +
+                         f"\ttime:{Application.instance.simulation.time}" +
+                         f"\tname:{self.name}" +
+                         f"\n\tvalue: {'1' if one else '0'}")
+
+        self.get_ports()[0].add_data_send_started_callback(log_sending)
+        self.get_ports()[0].add_data_send_finished_callback(log_finished)
+
+    def update(self):
+        logging.info(f"Dispenser on update:" +
+                     f"\ttime:{Application.instance.simulation.time}" +
+                     f"\tname:{self.name}")
+
+    @classmethod
+    def get_element_type_name(cls):
+        return 'dispenser'
+
+
+class Lector(PortedElement):
+    def __init__(self, name: str, sim_context: SimContext, *args, **kwargs):
+        super().__init__(name, sim_context, 1, *args, **kwargs)
+
+        def log_recieve(one: bool):
+            de = self.get_ports()[0].get_data_eater()
+            storedb = byteFormat(de.get_current_data(),
+                                 format=f"$n:{len(de)}$", mode='b')
+            storedh = byteFormat(de.get_current_data(),
+                                 format=f"$n:{(len(de)+3)//4}$")
+            logging.info(f"Lector start recieving a bit:" +
+                         f"\ttime:{Application.instance.simulation.time}" +
+                         f"\tname:{self.name}" +
+                         f"\n\tvalue: {'1' if one else '0'}" +
+                         f"\nNew Stored Values:" +
+                         f"\n\tstored hexadecimal:{storedh}" +
+                         f"\n\tstored binary:{storedb}")
+
+        def log_finished(one: bool):
+            logging.info(f"Lector end recieving a bit:" +
+                         f"\ttime:{Application.instance.simulation.time}" +
+                         f"\tname:{self.name}" +
+                         f"\n\tvalue: {'1' if one else '0'}")
+
+        self.get_ports()[0].add_data_recieve_started_callback(log_recieve)
+        self.get_ports()[0].add_data_recieve_finished_callback(log_finished)
+
+    def update(self):
+        de = self.get_ports()[0].get_data_eater()
+        storedb = byteFormat(de.get_current_data(),
+                             format=f"$n:{len(de)}$", mode='b')
+        storedh = byteFormat(de.get_current_data(),
+                             format=f"$n:{(len(de)+3)//4}$")
+        logging.info(f"Lector on update:" +
+                     f"\ttime:{Application.instance.simulation.time}" +
+                     f"\tname:{self.name}" +
+                     f"\n\tstored hexadecimal:{storedh}" +
+                     f"\n\tstored binary:{storedb}")
+
+    @classmethod
+    def get_element_type_name(cls):
+        return 'lector'
+
+    def send(self, port: Port | int, one: bool) -> bool:
+        raise Exception("Why would you use a Lector to send information?")

@@ -141,8 +141,20 @@ class Port():
     def receiving_zero(self) -> bool:
         return self.receiving() and self.__read_cable.sending_zero()
 
-    def end_data(self) -> bool:
+    def sending(self) -> bool:
         if self.isconnected():
+            return self.__write_cable.sending()
+        else:
+            return False
+
+    def sending_one(self) -> bool:
+        return self.sending() and self.__write_cable.sending_one()
+
+    def sending_zero(self) -> bool:
+        return self.sending() and self.__write_cable.sending_zero()
+
+    def end_data(self) -> bool:
+        if self.isconnected() and self.sending():
             one = self.get_write_cable().sending_one()
             self.__on_data_send_end(one)
             self.__write_cable.end()
