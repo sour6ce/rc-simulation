@@ -57,3 +57,15 @@ class TestIP(unittest.TestCase):
         self.assertEqual(iptostr(l[2]), '192.168.10.194')
         self.assertEqual(iptostr(l[-1]), '192.168.10.223')
         self.assertEqual(iptostr(l[-2]), '192.168.10.222')
+
+    def test_message(self):
+        main_net=uip('10.0.65.56')
+        main_net_mask=umask('255.255.192.0')
+        
+        main_subnet=ip_getnet_ip(main_net,main_net_mask)
+        
+        self.assertEqual(iptostr(main_subnet),'10.0.64.0')
+        self.assertEqual(
+            iptostr(ip_broadcast_ip(main_net,main_net_mask)),
+            '10.0.127.255'
+        )

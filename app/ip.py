@@ -1,7 +1,7 @@
 import re
 from typing import Iterable, List, Tuple
 
-from app.bitwork import bit_size, itobl, itoil, uint
+from app.bitwork import bit_negate, bit_size, itobl, itoil, uint
 
 ipre = re.compile(r'([0-9A-F]*)\.([0-9A-F]*)\.([0-9A-F]*)\.([0-9A-F]*)')
 
@@ -135,7 +135,7 @@ def ip_getnet_ip(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, int])
     ip_i = iptoi(ip)
     mask_i = iptoi(mask)
 
-    return (mask_i & ip_i)
+    return uip(mask_i & ip_i)
 
 
 def ip_getips_innet(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, int]) -> Iterable[Tuple[int, int, int, int]]:
@@ -148,3 +148,9 @@ def ip_getips_innet(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, in
         ip = ip_next(ip)
         if (ip_getnet_ip(ip, mask) != subnet_ip):
             break
+
+def ip_broadcast_ip(ip:Tuple[int, int, int, int],mask:Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    val:int=iptoi(ip_getnet_ip(ip,mask))
+    add:int=bit_negate(iptoi(umask(mask)))
+    
+    return uip(val+add)
