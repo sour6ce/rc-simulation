@@ -72,19 +72,27 @@ def byteFormat(n: int, format: str = "$n$", mode: str = 'h') -> str:
     return format[:st]+n+format[en+1:]
 
 
-def itoil(n: int) -> List[int]:
+def itoil(n: int, complete: int | None = None) -> List[int]:
     n = uint(n)
     r = []
     while(n > 0):
         r.append(n & 1)
         n >>= 1
     r.reverse()
-    return r if len(r) != 0 else [False]
+    if complete is None or complete==len(r):
+        if len(r)==0:
+            return [False]
+        else:
+            return r
+    elif complete<len(r):
+        return r[-complete:]
+    else:
+        return ([0]*(complete-len(r)))+r
 
 
-def itobl(n: int) -> List[bool]:
+def itobl(n: int, complete: int | None = None) -> List[bool]:
     n = uint(n)
-    return [False if v <= 0 else True for v in itoil(n)]
+    return [False if v <= 0 else True for v in itoil(n,complete)]
 
 
 def itob(n: int) -> bytes:
@@ -120,9 +128,9 @@ def bit_sub(n: int, start: int | None = None, end: int | None = None) -> int:
     return (uint(itoil(n)[start:end]))
 
 
-def bit_get(n: int, index: int = -1) -> int:
+def bit_get(n: int, index: int = 0) -> int:
     n = uint(n)
-    return itoil(n)[index]
+    return itoil(n,index+1)
 
 
 def bit_set(n: int, index: int = 0, v: bool | int | None = 1) -> int:

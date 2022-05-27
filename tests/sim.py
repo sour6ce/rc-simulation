@@ -129,6 +129,34 @@ class Lector(PortedElement):
                          f"\tname:{self.name}" +
                          f"\n\tvalue: {'1' if one else '0'}")
 
+        def log_frame():
+            de = self.get_ports()[0].get_data_eater()
+            storedb = byteFormat(de.get_current_data(),
+                                 format=f"$n:{len(de)}$", mode='b')
+            storedh = byteFormat(de.get_current_data(),
+                                 format=f"$n:{(len(de)+3)//4}$")
+            tm = de.get_target_mac()
+            tm = byteFormat(tm[0], format=f"n:{tm[1]//4}")
+            om = de.get_origin_mac()
+            om = byteFormat(om[0], format=f"n:{om[1]//4}")
+            datat = de.get_data()
+            datat = byteFormat(datat[0], format=f"n:{datat[1]//4}")
+            data = ""
+            for i in range(0, len(datat), 2):
+                if ((i//2) % 64 == 0):
+                    data += "\n\t\t"
+                data += data[i:i+2]
+                data += " "
+            logging.info(f"Lector recieved a frame:" +
+                         f"\n\ttime:{Application.instance.simulation.time}" +
+                         f"\tname:{self.name}" +
+                         f"\n\tstored hexadecimal:{storedh}" +
+                         f"\n\tstored binary:{storedb}" +
+                         f"\nFrame Data:" +
+                         f"\n\tTarget Mac: {tm}" +
+                         f"\n\tOrigin Max: {om}" +
+                         f"\n\tData:{data}")
+
         self.get_ports()[0].add_data_recieve_started_callback(log_recieve)
         self.get_ports()[0].add_data_recieve_finished_callback(log_finished)
 

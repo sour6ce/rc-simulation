@@ -149,8 +149,8 @@ def ip_getips_innet(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, in
         if (ip_getnet_ip(ip, mask) != subnet_ip):
             break
 
-def ip_broadcast_ip(ip:Tuple[int, int, int, int],mask:Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
-    val:int=iptoi(ip_getnet_ip(ip,mask))
-    add:int=bit_negate(iptoi(umask(mask)))
-    
+
+def ip_broadcast_ip(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    val: int = iptoi(ip_getnet_ip(ip, mask))
+    add: int = bit_negate(iptoi(umask(mask)))
     return uip(val+add)
