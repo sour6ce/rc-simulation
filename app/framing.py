@@ -185,10 +185,12 @@ class DataEater():
         self.__fef.remove(call)
 
 
-def frame_build(target_mac: int, origin_mac: int,  data: int) -> Tuple[int, int]:
+def frame_build(target_mac: int, origin_mac: int,  data: int, data_len: None | int = None) -> Tuple[int, int]:
     origin_mac = uint(origin_mac)
     target_mac = uint(target_mac)
     data = uint(data)
+    if data_len != None:
+        data_len = int(data_len)
 
     r = 0
     r |= target_mac & bit_mask(MAC_BYTESIZE*8)
@@ -196,7 +198,8 @@ def frame_build(target_mac: int, origin_mac: int,  data: int) -> Tuple[int, int]
     r |= origin_mac & bit_mask(MAC_BYTESIZE*8)
     r <<= (DATASIZE_BYTESIZE*8)
 
-    data_size = len(byteFormat(data, format="$n:c$", mode='b'))//8
+    data_size = len(byteFormat(data, format="$n:c$", mode='b'))//8 if\
+        data_len is None else data_len
 
     r |= data_size & bit_mask(DATASIZE_BYTESIZE*8)
     r <<= (VALIDATIONSIZE_BYTESIZE*8)
