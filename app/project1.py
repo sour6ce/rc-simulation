@@ -239,10 +239,10 @@ class SendCMD(main.CommandDef):
 
 class BasicInit(plug.PluginInit1):
     def run(self,app:application.Application,*args,**kwargs):
-        app.config['signal_time']='10' #default value of signal_time
+        # app.config['signal_time']='10' #default value of signal_time
 
         #Script preprocessor that remove comments and empty lines
-        app.script_pipe.append(lambda s:[l.replace('\n','') for l in s if l.strip() and l.strip()[0]!='#'])
+        # app.script_pipe.append(lambda s:[l.replace('\n','') for l in s if l.strip() and l.strip()[0]!='#'])
 
         #Add to the list the elements added by the plugin
         # app.elements['host']=app.elements['pc']=PC

@@ -48,7 +48,7 @@ def chksum(data: str) -> str:
     #     d_len=((d_len//8)+1)*8
 
     # Separate for byte and turn it into int
-    data = [int(data[i:i+2], 16) if i + 1 < d_len else int(data[i:],16)
+    data = [int(data[i:i+2], 16) if i + 1 < d_len else int(data[i:], 16)
             for i in range(0, d_len, 2)]
     # data=[int(data[i:i+8],) for i in range(0,d_len,8)]
     # d_len=d_len//8
@@ -184,7 +184,7 @@ class Port():
         return self.__element
 
     def __write_data(self, data) -> bool:
-        self.get_element().output(\
+        self.get_element().output(
             f"{main.Application.instance.simulation.time} {self} send {'1' if data else '0'}")
         if self.isconnected():
             self.end_data()
@@ -441,7 +441,7 @@ class PC(PortedElement):
         self.__las_update_time = newtime
 
         if self.__sdata != '':
-            if self.__timer>0:
+            if self.__timer > 0:
                 self.__timer -= elapsed
             if self.__timer == 0:
                 data = self.__sdata[0]
@@ -536,8 +536,8 @@ class Switch(PortedElement):
                 if de.get_target_mac() in self.__table.keys():
                     port = self.__table[de.get_target_mac()]
                 self.__table[de.get_origin_mac()] = index
-                if (port!=index):
-                    self.__fqueue.put((de.get_current_data(), port,index))
+                if (port != index):
+                    self.__fqueue.put((de.get_current_data(), port, index))
                 schedule_blank(main.Application.instance.simulation.time)
 
     def update(self):
@@ -546,16 +546,16 @@ class Switch(PortedElement):
         self.__last_update = new_time
         if not self.__fqueue.empty():
             frame, port, input = self.__fqueue.queue[0]
-            can_move_frame = (port == -1 and all((cur == '' for i,cur in enumerate(self.__current) if i!=input))) or\
+            can_move_frame = (port == -1 and all((cur == '' for i, cur in enumerate(self.__current) if i != input))) or\
                 (self.__current[port] == '')
 
             if can_move_frame:
                 self.__fqueue.get()
-                self.__current = [frame if i == port or (port == -1 and i!=input) else value
-                                for i, value in enumerate(self.__current)]
+                self.__current = [frame if i == port or (port == -1 and i != input) else value
+                                  for i, value in enumerate(self.__current)]
 
-        self.__timers = [value-elapsed if self.__current[i]!= ''
-                        else -1 for i, value in enumerate(self.__timers)]
+        self.__timers = [value-elapsed if self.__current[i] != ''
+                         else -1 for i, value in enumerate(self.__timers)]
 
         did_send = False
 
@@ -673,17 +673,17 @@ class SendFrameCMD(main.CommandDef):
 
 class Init(plug.PluginInit1):
     def run(self, app: main.Application, *args, **kwargs):
-        app.config['signal_time'] = '10'  # default value of signal_time
+        # app.config['signal_time'] = '10'  # default value of signal_time
 
         # Script preprocessor that remove comments and empty lines
-        app.script_pipe.append(lambda s: [l.replace(
-            '\n', '') for l in s if l.strip() and l.strip()[0] != '#'])
+        # app.script_pipe.append(lambda s: [l.replace(
+        #     '\n', '') for l in s if l.strip() and l.strip()[0] != '#'])
 
         # Add to the list the elements added by the plugin
         # app.elements['host'] = app.elements['pc'] = PC
         app.elements['hub'] = Hub
         app.elements['switch'] = Switch
-        app.elements['__cable'] = Cable
+        # app.elements['__cable'] = Cable
 
         # Add commands to the list
         # app.commands['create'] = CreateCMD()
