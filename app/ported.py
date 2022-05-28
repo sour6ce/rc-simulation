@@ -21,12 +21,13 @@ def get_ports_byname(port: str) -> Iterable[Port]:
 def get_port_byname(port: str) -> Port | None:
     return next(get_ports_byname(port), None)
 
-def delete_element(name:str) -> bool:
-    element=get_element_byname(name)
+
+def delete_element(name: str) -> bool:
+    element = get_element_byname(name)
     if element is None:
         return False
     if isported(element):
-        ports:List[Port]=element.get_ports()
+        ports: List[Port] = element.get_ports()
         [p.disconnect() for p in ports]
     Application.instance.simulation.elements.remove(element)
     del(element)
@@ -66,7 +67,7 @@ class PortedElement(SimElement):
 
     def has_port(self, port: Port) -> bool:
         return next((p for p in self.__ports if p == port), None) != None
-    
+
     def issending(self, port: Port | int) -> bool:
         if isinstance(port, int):
             return self.__ports[port].sending()

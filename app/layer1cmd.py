@@ -36,7 +36,7 @@ class SendCMD(CommandDef):
 
         def update_sending():
             host.end_sending(0)
-            if len(l)>1:
+            if len(l) > 1:
                 sime.execute_command(
                     'send',
                     host,

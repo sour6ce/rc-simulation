@@ -16,8 +16,10 @@ class PC(PortedElement):
         def check_data_end():
             de: DataEater = self.get_ports()[0].get_data_eater()
             if (is_for_me(self.get_mac(), de.get_target_mac()[0])):
-                data_str=byteFormat(de.get_data()[0],f'$n:{(de.get_data()[1]+3)//4}$')
-                mac_str=byteFormat(de.get_origin_mac()[0],f'$n:{(de.get_origin_mac()[1]+3)//4}$')
+                data_str = byteFormat(
+                    de.get_data()[0], f'$n:{(de.get_data()[1]+3)//4}$')
+                mac_str = byteFormat(de.get_origin_mac()[
+                                     0], f'$n:{(de.get_origin_mac()[1]+3)//4}$')
                 self.data_output(f"{Application.instance.simulation.time} " +
                                  f"{mac_str} " +
                                  f"{data_str}" +
