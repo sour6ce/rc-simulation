@@ -4,8 +4,7 @@ from app.exceptions import InvalidScriptParameter, MissingElement
 from app.extensions import execute_command, get_element_byname
 from app.framing import frame_build
 from app.host import PC
-from app.ported import isported
-from app.project2 import PortedElement
+from app.ported import isported, PortedElement
 
 
 class MacCMD(CommandDef):

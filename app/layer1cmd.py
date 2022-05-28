@@ -1,4 +1,3 @@
-from plistlib import UID
 from typing import List
 from app.core.main import Application, CommandDef, PluginInit1, SimContext, SimElement
 from app.ported import PortedElement, delete_element, get_port_byname, isported
@@ -29,6 +28,9 @@ class SendCMD(CommandDef):
                 host.name, data, *params, early=False
             )
             return
+        if len(data) == 0:
+            host.end_sending(0)
+            return
         l = itoil(uint(data), len(data))
 
         timer: SimElement
@@ -36,7 +38,7 @@ class SendCMD(CommandDef):
 
         def update_sending():
             host.end_sending(0)
-            if len(l) > 1:
+            if len(l) > 0:
                 sime.execute_command(
                     'send',
                     host,

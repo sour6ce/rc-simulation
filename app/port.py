@@ -25,8 +25,8 @@ class Port():
     def connect(self, port: Self) -> bool:
         self.disconnect()
         port.disconnect()
-        wc: Cable = Application.instance.elements["__cable"](self, port)
-        rc: Cable = Application.instance.elements["__cable"](self, port)
+        wc: Cable = Application.instance.elements["__cable"]()
+        rc: Cable = Application.instance.elements["__cable"]()
 
         self.__write_cable = port.__read_cable = wc
 
@@ -143,7 +143,8 @@ class Port():
 
     def sending(self) -> bool:
         if self.isconnected():
-            return self.__write_cable.sending()
+            c = self.__write_cable
+            return c.sending()
         else:
             return False
 

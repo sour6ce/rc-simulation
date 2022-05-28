@@ -1,3 +1,6 @@
+from app.core.main import Application, PluginInit1
+
+
 class Cable():
     def __init__(self) -> None:
         self.__data = False
@@ -23,3 +26,7 @@ class Cable():
     def end(self) -> None:
         self.__transmitting = False
         self.__data = False
+
+class Init(PluginInit1):
+    def run(self, app: Application, *args, **kwargs):
+        app.elements['__cable']=Cable

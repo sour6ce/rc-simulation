@@ -246,7 +246,8 @@ class BasicInit(plug.PluginInit1):
 
         #Add to the list the elements added by the plugin
         # app.elements['host']=app.elements['pc']=PC
-        app.elements['hub']=Hub
+        # app.elements['hub']=Hub
+        pass
 
 class CommandsInit(plug.PluginInit1):
     def run(self,app:application.Application,*args,**kwargs):

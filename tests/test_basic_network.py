@@ -43,3 +43,9 @@ class TestNet(SimulationTest):
 
         while self.advance():
             pass
+
+    def test_parachute(self):
+        self.init_env(wrap_handler=self.custom_wrap)
+
+        while self.advance():
+            pass

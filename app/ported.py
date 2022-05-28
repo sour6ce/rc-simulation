@@ -82,7 +82,7 @@ class PortedElement(SimElement):
                 return self.__ports[port].send_one()
             else:
                 return self.__ports[port].send_zero()
-        if next((p for p in self.__ports if p == port), None) is not None:
+        if self.has_port(port):
             if one:
                 return port.send_one()
             else:
@@ -93,7 +93,7 @@ class PortedElement(SimElement):
     def end_sending(self, port: Port) -> bool:
         if isinstance(port, int):
             return self.__ports[port].end_data()
-        if next((p for p in self.__ports if p == port), None) is not None:
+        if self.has_port(port):
             return port.end_data()
         else:
             raise ValueError(f"Port in argument don't belongs to this element")

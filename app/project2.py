@@ -681,7 +681,7 @@ class Init(plug.PluginInit1):
 
         # Add to the list the elements added by the plugin
         # app.elements['host'] = app.elements['pc'] = PC
-        app.elements['hub'] = Hub
+        # app.elements['hub'] = Hub
         app.elements['switch'] = Switch
         # app.elements['__cable'] = Cable
 
