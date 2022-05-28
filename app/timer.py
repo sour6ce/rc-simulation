@@ -2,7 +2,7 @@ from typing import Callable, List
 from app.core.main import Application
 import app.core.main as sim
 import app.core.main as main
-from app.simulation_extensions import schedule_forced_update
+from app.extensions import schedule_forced_update
 
 
 class Timer(sim.SimElement):

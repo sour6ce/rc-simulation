@@ -1,6 +1,7 @@
 import logging
-from typing import Iterable, List, Type
+from typing import Any, Iterable, List, Type
 from app.core.main import Application, CommandDef, MissingCommandDefinition, PluginInit1, SimContext, SimElement, SubCommand
+from app.exceptions import MissingElementDefinition
 
 LOAD_ORDER = -1
 
@@ -15,7 +16,7 @@ def get_commanddef_byname(name: str) -> CommandDef | None:
     return cmd
 
 
-def get_element_type_byname(name: str) -> SimElement | None:
+def get_element_type_byname(name: str) -> Type | None:
     return Application.instance.elements[name] if \
         name in Application.instance.elements.keys() else None
 
@@ -37,9 +38,13 @@ def get_element_bytype(type: Type) -> SimElement | None:
 
 
 def create_element(type_name: str, name: str, *params, **kwargs) -> SimElement:
+    type_name = str(type_name)
     sim_context = Application.instance.simulation
+    element_def: Type | None = get_element_type_byname(type_name)
+    if element_def is None:
+        raise MissingElementDefinition(type_name)
     sim_context.elements.append(
-        get_element_type_byname(str(type_name))(str(name), sim_context, *(str(v) for v in params), **kwargs))
+        element_def(str(name), sim_context, *(str(v) for v in params), **kwargs))
     return sim_context.elements[-1]
 
 
@@ -70,7 +75,7 @@ def schedule_forced_update(time: int, early=True) -> None:
             time, Application.instance.pv_commands['blank']))
 
 
-def execute_command(name: str, *params: List[str]) -> None:
+def execute_command(name: str, *params: List[Any]) -> None:
     c = get_commanddef_byname(name)
 
     if (c is None):
@@ -100,9 +105,15 @@ def basic_wrap_handler(keyword: str, originalcmd: str, *params: List[str]):
     execute_command(originalcmd, *params)
 
 
+class BlankCMD(CommandDef):
+    def run(self, sim_context, *params):
+        pass
+
+
 class DebugInit(PluginInit1):
     def run(self, app: Application, *args, **kwargs):
         app.commands['print'] = PrintCMD()
         app.commands['$'] = WrapperCMD()
+        app.pv_commands['blank'] = BlankCMD()
 
         app.wrap_handler = basic_wrap_handler

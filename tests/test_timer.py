@@ -2,7 +2,7 @@ import logging
 from sqlite3 import Time
 from typing import List
 from tests.sim import SimulationTest
-import app.simulation_extensions as sime
+import app.extensions as sime
 from app.core.main import Application, CommandDef
 from app.timer import Timer
 
