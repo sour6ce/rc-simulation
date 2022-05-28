@@ -76,7 +76,12 @@ def chksum(data: str) -> str:
 
 
 def is_ported(element: sim.SimElement) -> bool:
-    return isinstance(element, PortedElement)
+    try:
+        element.get_ports()
+        return True
+    except:
+        return False
+    # return isinstance(element, PortedElement)
 
 
 def resolve_element(element):
@@ -675,19 +680,19 @@ class Init(plug.PluginInit1):
             '\n', '') for l in s if l.strip() and l.strip()[0] != '#'])
 
         # Add to the list the elements added by the plugin
-        app.elements['host'] = app.elements['pc'] = PC
+        # app.elements['host'] = app.elements['pc'] = PC
         app.elements['hub'] = Hub
         app.elements['switch'] = Switch
         app.elements['__cable'] = Cable
 
         # Add commands to the list
-        app.commands['create'] = CreateCMD()
-        app.commands['connect'] = ConnectCMD()
-        app.commands['disconnect'] = DisconnectCMD()
-        app.commands['send'] = SendCMD()
-        app.commands['send_frame'] = SendFrameCMD()
-        app.commands['mac'] = MacCMD()
+        # app.commands['create'] = CreateCMD()
+        # app.commands['connect'] = ConnectCMD()
+        # app.commands['disconnect'] = DisconnectCMD()
+        # app.commands['send'] = SendCMD()
+        # app.commands['send_frame'] = SendFrameCMD()
+        # app.commands['mac'] = MacCMD()
 
-        app.pv_commands['blank'] = BlankCMD()
+        # app.pv_commands['blank'] = BlankCMD()
 
 #TODO: Testing

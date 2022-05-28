@@ -245,15 +245,16 @@ class BasicInit(plug.PluginInit1):
         app.script_pipe.append(lambda s:[l.replace('\n','') for l in s if l.strip() and l.strip()[0]!='#'])
 
         #Add to the list the elements added by the plugin
-        app.elements['host']=app.elements['pc']=PC
+        # app.elements['host']=app.elements['pc']=PC
         app.elements['hub']=Hub
 
 class CommandsInit(plug.PluginInit1):
     def run(self,app:application.Application,*args,**kwargs):
         #Add commands to the list
-        app.commands['create']=CreateCMD()
-        app.commands['connect']=ConnectCMD()
-        app.commands['disconnect']=DisconnectCMD()
-        app.commands['send']=SendCMD()
+        # app.commands['create']=CreateCMD()
+        # app.commands['connect']=ConnectCMD()
+        # app.commands['disconnect']=DisconnectCMD()
+        # app.commands['send']=SendCMD()
         
-        app.pv_commands['endsend']=EndSendingCMD()
+        # app.pv_commands['endsend']=EndSendingCMD()
+        pass
