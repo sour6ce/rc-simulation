@@ -3,7 +3,6 @@ from typing import Iterable, List
 from app.core.main import Application, SimContext, SimElement
 from app.port import Port
 from app.extensions import create_element, get_element_byname
-from app.ported import delete_element
 
 
 def isported(element: SimElement) -> bool:
@@ -45,24 +44,24 @@ class PortedElement(SimElement):
                         for i in range(int(default_ports))]
 
         def get_timeout_callback(port: Port):
-            def wrap():
+            def wrap(*args, **kwargs):
                 port.get_data_eater().clear()
             return wrap
 
         def data_timeout_timer(port: Port):
-            def wrap():
+            def wrap(*args, **kwargs):
                 old_timer: Timer = None
                 try:
                     old_timer = get_element_byname(f"{port}_timeout_timer")
                     old_timer.curent_time
                 except:
-                    pass
+                    old_timer = None
                 if (old_timer is not None):
-                    delete_element(f"{port}_timeout_timer")
+                    delete_element(old_timer.name)
                 timer: Timer = create_element(
                     'timer',
                     f"{port}_timeout_timer",
-                    Application.config['data_input_timeout']
+                    Application.instance.config['data_input_timeout']
                 )
                 timer.add_time_passed_callback(get_timeout_callback(port))
             return wrap
@@ -74,8 +73,11 @@ class PortedElement(SimElement):
             port.add_data_recieve_started_callback(lambda x: self.output(
                 f"{Application.instance.simulation.time} {self} recieve {'1' if x else '0'}"
             ))
-            if int(Application.config['data_input_timeout']) >= 0:
-                port.add_data_send_finished_callback(data_timeout_timer(port))
+            if int(Application.instance.config['data_input_timeout']) >= 0:
+                port.add_data_recieve_finished_callback(
+                    data_timeout_timer(port))
+                port.add_data_recieve_started_callback(
+                    data_timeout_timer(port))
 
     def get_ports(self) -> List[Port]:
         return self.__ports

@@ -39,7 +39,7 @@ class SendFrameCMD(CommandDef):
         data_len = len(data) if isinstance(data, str) else None
         data = int(data, 16)
 
-        frame = frame_build(mac, host.get_mac(), data, data_len//2)
+        frame = frame_build(mac, host.get_mac(), data, (data_len+1)//2)
 
         execute_command('send', host.name, itoil(frame[0], frame[1]))
 
