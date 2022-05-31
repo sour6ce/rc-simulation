@@ -673,6 +673,7 @@ class SendFrameCMD(main.CommandDef):
 
 class Init(plug.PluginInit1):
     def run(self, app: main.Application, *args, **kwargs):
+        pass
         # app.config['signal_time'] = '10'  # default value of signal_time
 
         # Script preprocessor that remove comments and empty lines
@@ -682,7 +683,7 @@ class Init(plug.PluginInit1):
         # Add to the list the elements added by the plugin
         # app.elements['host'] = app.elements['pc'] = PC
         # app.elements['hub'] = Hub
-        app.elements['switch'] = Switch
+        # app.elements['switch'] = Switch
         # app.elements['__cable'] = Cable
 
         # Add commands to the list
