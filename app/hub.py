@@ -15,14 +15,14 @@ class Hub(PortedElement):
         self.__iport: Port = None
 
         def callback_getter_recieve(port: Port):
-            def wrap(one: bool):
+            def pure(one: bool):
                 self.on_data_receive(port, one)
-            return wrap
+            return pure
 
         def callback_getter_end(port: Port):
-            def wrap(one: bool):
+            def pure(one: bool):
                 self.on_data_end(port, one)
-            return wrap
+            return pure
 
         for p in self.get_ports():
             p.add_data_recieve_started_callback(callback_getter_recieve(p))

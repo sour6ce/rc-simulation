@@ -44,12 +44,12 @@ class PortedElement(SimElement):
                         for i in range(int(default_ports))]
 
         def get_timeout_callback(port: Port):
-            def wrap(*args, **kwargs):
+            def pure(*args, **kwargs):
                 port.get_data_eater().clear()
-            return wrap
+            return pure
 
         def data_timeout_timer(port: Port):
-            def wrap(*args, **kwargs):
+            def pure(*args, **kwargs):
                 old_timer: Timer = None
                 try:
                     old_timer = get_element_byname(f"{port}_timeout_timer")
@@ -64,7 +64,7 @@ class PortedElement(SimElement):
                     Application.instance.config['data_input_timeout']
                 )
                 timer.add_time_passed_callback(get_timeout_callback(port))
-            return wrap
+            return pure
 
         for port in self.__ports:
             port.add_data_send_started_callback(lambda x: self.output(
