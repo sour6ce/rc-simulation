@@ -79,12 +79,12 @@ def itoil(n: int, complete: int | None = None) -> List[int]:
         r.append(n & 1)
         n >>= 1
     r.reverse()
-    if complete is None or complete==len(r):
-        if len(r)==0:
+    if complete is None or complete == len(r):
+        if len(r) == 0:
             return [False]
         else:
             return r
-    elif complete<len(r):
+    elif complete < len(r):
         return r[-complete:]
     else:
         return ([0]*(complete-len(r)))+r
@@ -92,28 +92,33 @@ def itoil(n: int, complete: int | None = None) -> List[int]:
 
 def itobl(n: int, complete: int | None = None) -> List[bool]:
     n = uint(n)
-    return [False if v <= 0 else True for v in itoil(n,complete)]
+    return [False if v <= 0 else True for v in itoil(n, complete)]
 
 
-def itob(n: int) -> bytes:
+def itob(n: int, complete: int | None = None) -> bytes:
     n = uint(n)
     r = []
     while(n > 0):
         r.append(n & 0xFF)
         n >>= 8
     r.reverse()
+    if complete is not None and len(r) != complete:
+        if complete < len(r):
+            r = r[-complete:]
+        else:
+            r = ([0]*(complete-len(r)))+r
+
     return bytes(r) if len(r) != 0 else bytes([0])
 
 
 def bit_size(n: int) -> int:
-    n = uint(n)
-    return sum((1 for v in itoil(n)))
+    return uint(n).bit_length() if n>0 else 1
 
 
-def bit_append(a: int, b: int) -> int:
+def bit_append(a: int, b: int, b_size: int | None = None) -> int:
     a = uint(a)
     b = uint(b)
-    return (a << bit_size(b)) | b
+    return (a << (bit_size(b) if b_size is None else b_size)) | b
 
 
 def bit_reverse(n: int) -> int:
@@ -130,7 +135,7 @@ def bit_sub(n: int, start: int | None = None, end: int | None = None) -> int:
 
 def bit_get(n: int, index: int = 0) -> int:
     n = uint(n)
-    return itoil(n,index+1)
+    return itoil(n, index+1)
 
 
 def bit_set(n: int, index: int = 0, v: bool | int | None = 1) -> int:
