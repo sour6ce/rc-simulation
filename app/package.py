@@ -1,7 +1,7 @@
 from typing import Any, Dict, Tuple
 from app.bitwork import bit_chop, bit_mask, bit_size, byteFormat, itob, uint
 from app.framing import frame_build
-from app.ip import iptoi, uip
+from app.ip import IP, iptoi, uip
 
 
 def get_layer2_protocol_name_from_data(data: int, data_len: int) -> str | None:
@@ -24,8 +24,8 @@ def get_layer2_data_from_protocol_name(protocol: str) -> int:
 def package_build(
     target_mac: int,
     origin_mac: int,
-    target_ip: Tuple[int, int, int, int],
-    origin_ip: Tuple[int, int, int, int],
+    target_ip: IP,
+    origin_ip: IP,
     data: int,
     data_len: int | None,
     ttl: int = 0,

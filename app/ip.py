@@ -5,8 +5,10 @@ from app.bitwork import bit_negate, bit_size, itobl, itoil, uint
 
 ipre = re.compile(r'([0-9A-F]*)\.([0-9A-F]*)\.([0-9A-F]*)\.([0-9A-F]*)')
 
+IP = Tuple[int, int, int, int]
 
-def uip(data: int | List[int] | bytes | str | Tuple[int, int, int, int] | None) -> Tuple[int, int, int, int]:
+
+def uip(data: int | List[int] | bytes | str | IP | None) -> IP:
     match data:
         case (int(), int(), int(), int()):
             return tuple([v & 0xFF for v in data])
@@ -37,7 +39,7 @@ def uip(data: int | List[int] | bytes | str | Tuple[int, int, int, int] | None) 
                 f"Invalid type passed in argument n({type(data)})")
 
 
-def iptoi(ip: Tuple[int, int, int, int]) -> int:
+def iptoi(ip: IP) -> int:
     ip = uip(ip)
     return (ip[0] << 24) |\
         (ip[1] << 16) |\
@@ -45,16 +47,16 @@ def iptoi(ip: Tuple[int, int, int, int]) -> int:
         (ip[3] << 0)
 
 
-def iptob(ip: Tuple[int, int, int, int]) -> bytes:
+def iptob(ip: IP) -> bytes:
     ip = uip(ip)
     return bytes(list(ip))
 
 
-def iptostr(ip: Tuple[int, int, int, int]) -> str:
+def iptostr(ip: IP) -> str:
     return '.'.join(map(str, list(uip(ip))))
 
 
-def ip_is_mask(ip: Tuple[int, int, int, int] | int) -> bool:
+def ip_is_mask(ip: IP | int) -> bool:
     if (isinstance(ip, int)):
         return ip >= 0 and ip <= 30
     n = iptoi(uip(ip))
@@ -65,7 +67,7 @@ def ip_is_mask(ip: Tuple[int, int, int, int] | int) -> bool:
         sum(1 for v in bl if v) <= 30
 
 
-def umask(mask: Tuple[int, int, int, int] | int) -> Tuple[int, int, int, int]:
+def umask(mask: IP | int) -> IP:
     if (isinstance(mask, int)):
         return uip(uint(('1'*mask)+('0'*(32-mask))))
     elif (not ip_is_mask(uip(mask))):
@@ -75,12 +77,12 @@ def umask(mask: Tuple[int, int, int, int] | int) -> Tuple[int, int, int, int]:
         return uip(mask)
 
 
-def ip_maskton(mask: Tuple[int, int, int, int]) -> int:
+def ip_maskton(mask: IP) -> int:
     mask = umask(mask)
     return sum(itoil(iptoi(mask)))
 
 
-def ip_trivial_mask(ip: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+def ip_trivial_mask(ip: IP) -> IP:
     a = list(uip(ip))
     a.reverse()
     pos = next((i for i, v in enumerate(a) if v > 0), 4)
@@ -90,7 +92,7 @@ def ip_trivial_mask(ip: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
     return umask(a)
 
 
-def ip_next(ip: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+def ip_next(ip: IP) -> IP:
     ip = uip(ip)
     if ip == (255, 255, 255, 255):
         return (0, 0, 0, 0)
@@ -109,7 +111,7 @@ def ip_next(ip: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
         return uip(l)
 
 
-def ip_prev(ip: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+def ip_prev(ip: IP) -> IP:
     ip = uip(ip)
     if ip == (0, 0, 0, 0):
         return (255, 255, 255, 255)
@@ -128,7 +130,7 @@ def ip_prev(ip: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
         return uip(l)
 
 
-def ip_getnet_ip(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+def ip_getnet_ip(ip: IP, mask: IP) -> IP:
     ip = uip(ip)
     mask = umask(mask)
 
@@ -138,7 +140,7 @@ def ip_getnet_ip(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, int])
     return uip(mask_i & ip_i)
 
 
-def ip_getips_innet(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, int]) -> Iterable[Tuple[int, int, int, int]]:
+def ip_getips_innet(ip: IP, mask: IP) -> Iterable[IP]:
     subnet_ip = ip_getnet_ip(ip, mask)
 
     ip = subnet_ip
@@ -150,7 +152,7 @@ def ip_getips_innet(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, in
             break
 
 
-def ip_broadcast_ip(ip: Tuple[int, int, int, int], mask: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+def ip_broadcast_ip(ip: IP, mask: IP) -> IP:
     val: int = iptoi(ip_getnet_ip(ip, mask))
     add: int = bit_negate(iptoi(umask(mask)))
     return uip(val+add)

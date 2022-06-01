@@ -5,6 +5,9 @@ from app.bitwork import bit_append, bit_chop, bit_mask, bit_sub, byteFormat, uin
 
 
 def chksum(data: int) -> int:
+    # Internet Checksum Implementation
+    # https://github.com/mdelatorre/checksum/blob/master/ichecksum.py
+    # https://datatracker.ietf.org/doc/html/rfc1071
     data = byteFormat(data, format='$n:c$')
     d_len = len(data)
 
