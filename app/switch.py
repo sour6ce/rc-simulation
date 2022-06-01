@@ -1,5 +1,5 @@
-from asyncio import Queue
-from typing import List, Tuple
+from queue import Queue
+from typing import Callable, List, Tuple
 from app.bitwork import itoil
 from app.core.main import Application, PluginInit1, SimContext
 from app.extensions import create_element
@@ -40,7 +40,7 @@ class Switch(PortedElement):
         else:
             return self.table[mac]
 
-    def on_frame(self, port: int, de: DataEater):
+    def on_frame(self, port: int, de: DataEater) -> None:
         input_index = port
         self.table[de.get_origin_mac()[0]] = input_index
 
@@ -48,39 +48,41 @@ class Switch(PortedElement):
         t = de.get_target_mac()
         if t[0] in self.table.keys():
             port = self.table[t[0]]
-        data = de.get_data()
-        self.__fqueue.put((itoil(data[0], data[1]), port, input_index))
+        frame = (de.get_current_data(), len(de))
+        tup = (itoil(frame[0], frame[1]), port, input_index)
+        self.__fqueue.put(tup)
         self.update_output()
         self.update_send()
 
-    def update_output(self):
+    def update_output(self) -> None:
         if not self.__fqueue.empty():
-            frame, port, input = self.__fqueue.queue[0]
-            can_move_frame = (port == -1 and
-                              all((len(cur) == 0 for i, cur in
-                                  enumerate(self.__current) if i != input))) or \
-                (len(self.__current[port]) == 0)
-            if Application.instance.config['switch_buffer'] == 'on':
-                can_move_frame = True
-            if can_move_frame:
-                self.__fqueue.get()
-                self.__current = [value+frame if
-                                  i == port or (port == -1 and i != input) else value
-                                  for i, value in enumerate(self.__current)]
+            # frame, port, input = self.__fqueue.queue[0]
+            # can_move_frame = (port == -1 and
+            #                   all((len(cur) == 0 for i, cur in
+            #                       enumerate(self.__current) if i != input))) or \
+            #     (len(self.__current[port]) == 0)
+            # if Application.instance.config['switch_buffer'] == 'on':
+            #     can_move_frame = True
+            # if can_move_frame:
+            # self.__fqueue.get()
+            frame, port, input = self.__fqueue.get()
+            self.__current = [value+frame if
+                              i == port or (port == -1 and i != input) else value
+                              for i, value in enumerate(self.__current)]
 
-    def timer_function(self, l):
+    def timer_function(self, l) -> Callable:
         def pure():
             index = l[0]
             self.__timers[index] = None
             self.get_ports()[index].end_data()
 
-            self.__current[index] = self.__current[1:]
+            self.__current[index] = self.__current[index][1:]
             if len(self.__current[index]) != 0:
                 self.__send_wait(index)
 
         return pure
 
-    def __send_wait(self, index):
+    def __send_wait(self, index) -> None:
         self.get_ports()[index].send_data(self.__current[index][0] > 0)
         self.__timers[index] = create_element(
             'timer',
@@ -90,7 +92,7 @@ class Switch(PortedElement):
         self.__timers[index].add_time_passed_callback(
             self.timer_function([index]))
 
-    def update_send(self):
+    def update_send(self) -> None:
         for i, data in enumerate(self.__current):
             if len(data) != 0:
                 if self.__timers[i] is None:
@@ -98,10 +100,9 @@ class Switch(PortedElement):
 
     def update(self):
         pass
-    
-    
+
+
 class Init(PluginInit1):
-    def run(self, app:Application, *args, **kwargs):
-        app.config['switch_buffer']='off'
-        
-        app.elements['switch']=Switch
+    def run(self, app: Application, *args, **kwargs):
+
+        app.elements['switch'] = Switch
