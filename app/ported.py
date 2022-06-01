@@ -36,12 +36,12 @@ def delete_element(name: str) -> bool:
 
 
 class PortedElement(SimElement):
-    def __init__(self, name: str, sim_context: SimContext, default_ports: int | str, *args, **kwargs):
+    def __init__(self, name: str, sim_context: SimContext, nports: int | str, *args, **kwargs):
         SimElement.__init__(self, name, sim_context,
-                            default_ports, *args, **kwargs)
+                            nports, *args, **kwargs)
 
         self.__ports = [Port(self.name+'_'+str(i+1))
-                        for i in range(int(default_ports))]
+                        for i in range(int(nports))]
 
         def get_timeout_callback(port: Port):
             def pure(*args, **kwargs):

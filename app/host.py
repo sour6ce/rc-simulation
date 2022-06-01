@@ -1,17 +1,17 @@
 from random import randint
 from app.core.main import Application, PluginInit1
 from app.framing import MAC_BYTESIZE, DataEater
-from app.mac import is_for_me
+from app.mac import MACElement, is_for_me
 from app.port import Port
 from app.ported import PortedElement
 from app.bitwork import byteFormat
 
+# TODO: Implement protocol
 
-class PC(PortedElement):
+
+class PC(MACElement):
     def __init__(self, name: str, sim_context, *args, **kwargs):
         super().__init__(name, sim_context, 1, *args, **kwargs)
-
-        self.__mac = randint(0, 254)
 
         def check_data_end():
             de: DataEater = self.get_ports()[0].get_data_eater()
@@ -33,11 +33,11 @@ class PC(PortedElement):
     def get_element_type_name(cls):
         return 'host'
 
-    def set_mac(self, mac: str):
-        self.__mac = mac & 0xFFFF
+    def set_mac(self, mac: int, port: int | Port = 0) -> None:
+        return super().set_mac(mac, port)
 
-    def get_mac(self) -> int:
-        return self.__mac
+    def get_mac(self, port: int | Port = 0) -> int:
+        return super().get_mac(port)
 
     def update(self):
         pass
