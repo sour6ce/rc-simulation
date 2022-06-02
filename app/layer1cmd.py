@@ -14,34 +14,42 @@ class BlankCMD(CommandDef):
 
 
 class SendCMD(CommandDef):
-    def run(self, sim_context: SimContext, host: PortedElement | str, data: str | List[int] | List[bool], *params):
+    def run(self, sim_context: SimContext, host: PortedElement | Port | str,
+            data: str | List[int] | List[bool], portindex: int = 0, *params):
+        port = None
         if not isinstance(host, PortedElement):
-            host = sime.get_element_byname(str(host))
-        if (host is None):
-            raise InvalidScriptParameter(MissingElement(host))
-        if not isported(host):
-            raise InvalidScriptParameter(
-                f"{host} doesn't have ports to send data")
-        if host.issending(0):
+            if isinstance(host, Port):
+                port = host
+            else:
+                port = get_port_byname(host)
+                if port is None:
+                    host = sime.get_element_byname(str(host))
+                    if not isported(host):
+                        raise InvalidScriptParameter(
+                            f"{host} doesn't have ports to send data")
+                    port = host.get_ports()[int(portindex)]
+        if (port is None):
+            raise InvalidScriptParameter(f"Wasn't given a valid host or port")
+        if port.sending():
             sime.schedule_command(
                 Application.instance.config['signal_time'], 'send',
-                host.name, data, *params, early=False
+                port, data, *params, early=False
             )
             return
         if len(data) == 0:
-            host.end_sending(0)
+            port.end_data()
             return
         l = itoil(uint(data), len(data))
 
         timer: SimElement
-        name = ['send_timer_host_'+host.name]
+        name = ['send_timer_port_'+str(port)]
 
         def update_sending():
-            host.end_sending(0)
+            port.end_data()
             if len(l) > 0:
                 sime.execute_command(
                     'send',
-                    host,
+                    port,
                     ''.join(('1' if (v == True) or (
                         v > 0) else '0' for v in l[1:])),
                     *params
@@ -54,7 +62,7 @@ class SendCMD(CommandDef):
         )
         timer.add_time_passed_callback(update_sending)
 
-        host.send(0, l[0] > 0)
+        port.send_data(l[0] > 0)
 
 
 class ConnectCMD(CommandDef):
