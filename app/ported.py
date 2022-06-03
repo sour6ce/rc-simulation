@@ -1,3 +1,4 @@
+from app.framing import DataEater
 from app.timer import Timer
 from typing import Iterable, List
 from app.core.main import Application, SimContext, SimElement
@@ -36,11 +37,12 @@ def delete_element(name: str) -> bool:
 
 
 class PortedElement(SimElement):
-    def __init__(self, name: str, sim_context: SimContext, nports: int | str, *args, **kwargs):
+    def __init__(self, name: str, sim_context: SimContext, nports: int | str,
+                 *args, data_eater_type: DataEater = DataEater, **kwargs):
         SimElement.__init__(self, name, sim_context,
                             nports, *args, **kwargs)
 
-        self.__ports = [Port(self.name+'_'+str(i+1))
+        self.__ports = [Port(self.name+'_'+str(i+1),data_eater_type)
                         for i in range(int(nports))]
 
         def get_timeout_callback(port: Port):

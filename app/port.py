@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, Type
 from typing_extensions import Self
 from app.cable import Cable
 from app.core.main import SimElement, Application
@@ -6,13 +6,13 @@ from app.framing import DataEater
 
 
 class Port():
-    def __init__(self, id: str) -> None:
+    def __init__(self, id: str, data_eater_type: Type[DataEater] = DataEater) -> None:
         self.__id: str = id
         self.__write_cable: Cable = None
         self.__read_cable: Cable = None
         self.__con_port: Port = None
 
-        self.__de = DataEater()
+        self.__de = data_eater_type()
 
         self.__dsend_cb: List[Callable] = []
         self.__drec_cb: List[Callable] = []
