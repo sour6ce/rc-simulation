@@ -6,6 +6,7 @@ RouteTableInstance = Tuple[IP, IP, IP, int]
 
 class RouteTable():
     __table: List[RouteTableInstance] = []
+    __default:  List[RouteTableInstance] = []
 
     def __init__(self, is_for_host: bool) -> None:
         self.__is_host = is_for_host
@@ -26,14 +27,17 @@ class RouteTable():
         gateway: IP,
         interface: int
     ) -> None:
+        if destination == (0, 0, 0, 0) and mask == (0, 0, 0, 0):
+            self.__default = [(destination, mask, gateway, interface)]
+            return
         t = self.__table
-        t.append(
-            cast_route(destination, mask, gateway, interface)
-        )
-        t.sort(key=self.sort_key)
         if self.__is_host:
-            if len(t) > 2:
-                t = t[-2:]
+            self.__table=[cast_route(destination, mask, gateway, interface)]
+        else:
+            t.append(
+                cast_route(destination, mask, gateway, interface)
+            )
+            t.sort(key=self.sort_key)
 
     def remove(
         self,
@@ -42,6 +46,9 @@ class RouteTable():
         gateway: IP,
         interface: int
     ) -> None:
+        if destination == (0, 0, 0, 0) and mask == (0, 0, 0, 0):
+            self.__default = []
+            return
         self.__table.remove(
             cast_route(destination, mask, gateway, interface)
         )
@@ -50,7 +57,7 @@ class RouteTable():
         for tup in self.__table:
             if tup[0] == ip_getnet_ip(ip, tup[1]):
                 return tup
-        return None
+        return None if len(self.__default) == 0 else self.__default[0]
 
 
 def cast_route(destination, mask, gateway, interface) -> RouteTableInstance:
