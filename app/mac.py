@@ -4,9 +4,9 @@ from app.arp import build_arpq, getARPIP, isdataARPR
 from app.bitwork import byteFormat, itoil
 from app.core.main import SimContext
 from app.extensions import execute_command
-from app.framing import MAC_BYTESIZE
+from app.framing import MAC_BYTESIZE, DataEater
 from app.ip import IP
-from app.package import package_build
+from app.package import isippkg, package_build
 from app.port import Port
 from app.ported import PortedElement
 
@@ -18,9 +18,31 @@ def is_for_me(my_mac: int, target_mac: int) -> bool:
     return my_mac == target_mac or target_mac == BROADCAST_MAC
 
 
+class IPDataEater(DataEater):
+    def __init__(self,
+                 frame_end_feedback: Callable | None = None,
+                 data_insertion_feedback: Callable | None = None
+                 ):
+        super().__init__(frame_end_feedback, data_insertion_feedback)
+
+        self.__ipf = []
+        self.add_frame_end_callback(
+            lambda: [c() for c in self.__ipf if callable(c)])
+
+    def add_package_arrival_callback(self, call: Callable):
+        self.__ipf.append(call)
+
+    def remove_package_arrival_callback(self, call: Callable):
+        self.__ipf.remove(call)
+
+    def ispackage(self) -> bool:
+        data = self.get_data()
+        return isippkg(data[0], data[1])
+
+
 class MACElement(PortedElement):
     def __init__(self, name: str, sim_context: SimContext, nports: int | str, *args, **kwargs):
-        super().__init__(name, sim_context, nports, *args, **kwargs)
+        super().__init__(name, sim_context, nports, data_eater_type=IPDataEater, *args, **kwargs)
 
         self.__mac = [randint(0, BROADCAST_MAC-1) for i in range(nports)]
         self.__ip: List[IP] = [(0, 0, 0, 0) for i in range(nports)]
