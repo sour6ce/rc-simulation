@@ -31,9 +31,11 @@ class PC(MACElement):
                     data = de.get_data()
                     info = get_package_info(data[0], data[1])
                     ip_str = iptostr(info['origin'])
+                    data_str = byteFormat(
+                        info['data'], f'$n:{(info["data_length"]+3)//4}$')
                     self.output(f"{Application.instance.simulation.time} " +
                                 f"{ip_str} " +
-                                f"{info['data']}", "_payload")
+                                f"{data_str}", "_payload")
 
         port: Port = self.get_ports()[0]
 

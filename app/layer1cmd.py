@@ -15,7 +15,7 @@ class BlankCMD(CommandDef):
 
 class SendCMD(CommandDef):
     def run(self, sim_context: SimContext, host: PortedElement | Port | str,
-            data: str | List[int] | List[bool], portindex: int = 0, *params):
+            data: str | List[int] | List[bool] | int, portindex: int = 0, *params):
         port = None
         if not isinstance(host, PortedElement):
             if isinstance(host, Port):
@@ -26,7 +26,7 @@ class SendCMD(CommandDef):
                     host = sime.get_element_byname(str(host))
                     if not isported(host):
                         raise InvalidScriptParameter(
-                            f"{host} doesn't have ports to send data")
+                            f"{host.name} doesn't have ports to send data")
                     port = host.get_ports()[int(portindex)]
         if (port is None):
             raise InvalidScriptParameter(f"Wasn't given a valid host or port")

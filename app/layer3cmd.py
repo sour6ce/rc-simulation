@@ -1,9 +1,11 @@
 from app.exceptions import InvalidScriptParameter, MissingElement
-from app.extensions import get_element_with_interface
+from app.extensions import get_element_byname, get_element_with_interface
+from app.host import PC
 from app.mac import MACElement
 from app.core.main import CommandDef, Application, PluginInit1
-from app.ported import PortedElement
-from app.ip import uip, umask
+from app.ported import PortedElement, isported
+from app.ip import IP, uip, umask
+from app.routes import RouteTable
 
 
 class IPCMD(CommandDef):
@@ -25,6 +27,51 @@ class IPCMD(CommandDef):
                 f"{element_n} doesn't allow ip asignation")
 
 
+class SendPacketCMD(CommandDef):
+    def run(self, sim_context, host: str | MACElement, address: str, data: str, *params):
+        address: IP = uip(address)
+        data = (int(data, 16), (len(data)+1)//2)
+        if not isinstance(host, PortedElement):
+            host = get_element_byname(str(host))
+        if (host is None):
+            raise InvalidScriptParameter(MissingElement(host))
+        if not isported(host):
+            raise InvalidScriptParameter(
+                f"{host} doesn't have ports to send data")
+        try:
+            pc: PC = host
+            pc.send_package(address, data[0], data[1])
+        except AttributeError:
+            raise InvalidScriptParameter(
+                f"{host} doesn't allow sending packages")
+
+
+class RouteCMD(CommandDef):
+    def run(self, sim_context, op: str, element: str | MACElement,
+            dest: IP | str, mask: IP | str, gateway: IP | str, interface: int | str, *params):
+        dest = uip(dest)
+        mask = uip(mask)
+        gateway = uip(gateway)
+        interface = int(interface)
+        if not isinstance(element, PortedElement):
+            element_n=get_element_byname(element)
+        if (element_n is None):
+            raise InvalidScriptParameter(MissingElement(element))
+        try:
+            table: RouteTable = element_n.route_table
+            if op=='add':
+                table.add(dest,mask,gateway,interface-1)
+            elif op=='delete':
+                table.remove(dest,mask,gateway,interface-1)
+        except AttributeError:
+            raise InvalidScriptParameter(
+                f"{element_n} doesn't have a route table")
+            
+    
+
+
 class Init(PluginInit1):
     def run(self, app: Application, *args, **kwargs):
         app.commands['ip'] = IPCMD()
+        app.commands['send_packet'] = SendPacketCMD()
+        app.commands['route'] = RouteCMD()

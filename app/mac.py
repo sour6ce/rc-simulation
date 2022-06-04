@@ -1,6 +1,6 @@
 from random import randint
 from typing import Callable, Dict, List, Tuple, Type
-from app.arp import build_arpq, getARPIP, isdataARPR
+from app.arp import build_arpq, build_arpr, getARPIP, isdataARPQ, isdataARPR
 from app.bitwork import byteFormat, itoil
 from app.core.main import SimContext
 from app.extensions import execute_command
@@ -52,9 +52,14 @@ class MACElement(PortedElement):
         self.ip_cache: Dict[IP, int] = {}
         self.ip_packages: Dict[IP, Tuple[IP, IP, int, int, int, int, int]] = {}
 
-        def callback_for_arp(port: List[int]) -> Callable:
+        def callback_for_arpr(port: List[int]) -> Callable:
             def pure():
                 self.__try_read_arpr(port[0])
+            return pure
+        
+        def callback_for_arpq(port: List[int]) -> Callable:
+            def pure():
+                self.__try_read_arpq(port[0])
             return pure
 
         def callback_smart_ip_cache(port: List[int]) -> Callable:
@@ -71,7 +76,8 @@ class MACElement(PortedElement):
 
         for i, p in enumerate(self.get_ports()):
             de = p.get_data_eater()
-            de.add_frame_end_callback(callback_for_arp([i]))
+            de.add_frame_end_callback(callback_for_arpr([i]))
+            de.add_frame_end_callback(callback_for_arpq([i]))
             de.add_frame_end_callback(callback_smart_ip_cache([i]))
 
     def __try_read_arpr(self, port: int) -> None:
@@ -81,6 +87,19 @@ class MACElement(PortedElement):
             ip = getARPIP(data[0], data[1])
             self.ip_cache[ip] = de.get_origin_mac()[0]
             self.__update_address(ip, port)
+            
+    def __try_read_arpq(self, port: int) -> None:
+        de = self.get_ports()[port].get_data_eater()
+        data = de.get_data()
+        if isdataARPQ(data[0], data[1]):
+            ip = getARPIP(data[0], data[1])
+            if ip==self.get_ip(port):
+                frame = build_arpr(self.get_mac(port),de.get_origin_mac()[0], ip)
+                execute_command(
+                    'send',
+                    self.get_ports()[port],
+                    itoil(frame[0], frame[1]*8)
+                )
 
     def add_package(self, address: IP, origin_ip: IP, port: int,
                     data: int, data_len: int, halfway_ip: IP | None = None,
@@ -126,17 +145,17 @@ class MACElement(PortedElement):
         execute_command(
             'send',
             self.get_ports()[port],
-            itoil(frame[0], frame[1])
+            itoil(frame[0], frame[1]*8)
         )
         execute_command(
             'send',
             self.get_ports()[port],
-            itoil(frame[0], frame[1])
+            itoil(frame[0], frame[1]*8)
         )
         execute_command(
             'send',
             self.get_ports()[port],
-            itoil(frame[0], frame[1])
+            itoil(frame[0], frame[1]*8)
         )
 
     def set_mac(self, mac: int, port: int | Port = 0) -> None:

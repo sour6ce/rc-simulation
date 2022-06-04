@@ -107,5 +107,6 @@ def get_package_info(data: int, data_len: int | None) -> Dict[str, Any] | None:
     data_len -= 8
     data &= bit_mask(data_len)
     r['data'] = data
+    r['data_length'] = data_len
 
     return r
