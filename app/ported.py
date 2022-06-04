@@ -73,7 +73,7 @@ class PortedElement(SimElement):
                 f"{Application.instance.simulation.time} {port} send {'1' if x else '0'}"
             ))
             port.add_data_recieve_started_callback(lambda x: self.output(
-                f"{Application.instance.simulation.time} {self} recieve {'1' if x else '0'}"
+                f"{Application.instance.simulation.time} {port} recieve {'1' if x else '0'}"
             ))
             if int(Application.instance.config['data_input_timeout']) >= 0:
                 port.add_data_recieve_finished_callback(
