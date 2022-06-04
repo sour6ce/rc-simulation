@@ -32,7 +32,7 @@ class RouteTable():
             return
         t = self.__table
         if self.__is_host:
-            self.__table=[cast_route(destination, mask, gateway, interface)]
+            self.__table = [cast_route(destination, mask, gateway, interface)]
         else:
             t.append(
                 cast_route(destination, mask, gateway, interface)
@@ -59,6 +59,14 @@ class RouteTable():
                 return tup
         return None if len(self.__default) == 0 else self.__default[0]
 
+
+def get_dict_from_instance(route_tuple: RouteTableInstance):
+    r = {}
+    r['destination'] = route_tuple[0]
+    r['mask'] = route_tuple[1]
+    r['gateway'] = route_tuple[2]
+    r['interface'] = route_tuple[3]
+    return r
 
 def cast_route(destination, mask, gateway, interface) -> RouteTableInstance:
     return (uip(destination),

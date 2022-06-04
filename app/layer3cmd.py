@@ -8,18 +8,23 @@ from app.ip import uip, umask
 
 class IPCMD(CommandDef):
     def run(self, sim_context, element: str | MACElement, address: str, mask: str, *params):
-        address = int(address, 16)
+        address = uip(address)
         if not isinstance(element, PortedElement):
-            element, interface = get_element_with_interface(str(element))
-        if (element is None):
+            element_n, interface = get_element_with_interface(str(element))
+        if (element_n is None):
             raise InvalidScriptParameter(MissingElement(element))
         try:
             if interface is None:
-                element.set_ip(uip(address))
-                element.set_mask(umask(mask))
+                element_n.set_ip(address)
+                element_n.set_mask(umask(mask))
             else:
-                element.set_ip(uip(address), interface-1)
-                element.set_mask(umask(mask), interface-1)
+                element_n.set_ip(address, interface-1)
+                element_n.set_mask(umask(mask), interface-1)
         except AttributeError:
             raise InvalidScriptParameter(
-                f"{element} doesn't allow mac asignation")
+                f"{element_n} doesn't allow ip asignation")
+
+
+class Init(PluginInit1):
+    def run(self, app: Application, *args, **kwargs):
+        app.commands['ip'] = IPCMD()
