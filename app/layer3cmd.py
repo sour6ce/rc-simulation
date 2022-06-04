@@ -48,7 +48,8 @@ class SendPacketCMD(CommandDef):
 
 class RouteCMD(CommandDef):
     def run(self, sim_context, op: str, element: str | MACElement,
-            dest: IP | str, mask: IP | str, gateway: IP | str, interface: int | str, *params):
+            dest: IP | str = None, mask: IP | str = None, gateway: IP | str = None,
+            interface: int | str = None, *params):
         dest = uip(dest)
         mask = uip(mask)
         gateway = uip(gateway)
@@ -63,6 +64,8 @@ class RouteCMD(CommandDef):
                 table.add(dest, mask, gateway, interface-1)
             elif op == 'delete':
                 table.remove(dest, mask, gateway, interface-1)
+            elif op == 'reset':
+                table.reset()
         except AttributeError:
             raise InvalidScriptParameter(
                 f"{element_n} doesn't have a route table")

@@ -2,7 +2,7 @@ from typing import Callable, List
 from app.core.main import Application
 import app.core.main as sim
 import app.core.main as main
-from app.extensions import schedule_forced_update
+from app.extensions import schedule_forced_update, delete_element
 
 
 class Timer(sim.SimElement):
@@ -21,6 +21,7 @@ class Timer(sim.SimElement):
 
     def update(self):
         if self.finished:
+            delete_element(self.name)
             return
         ctime = Application.instance.simulation.time
         self.curent_time = self.initial_time-(ctime-self.initial_total_time)

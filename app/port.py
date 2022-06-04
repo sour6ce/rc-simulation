@@ -111,9 +111,9 @@ class Port():
             self.__drec_f_cb.remove(call)
 
     def send_data(self, one: bool) -> bool:
-        self.__on_data_send_start(one)
         if self.isconnected():
             self.end_data()
+            self.__on_data_send_start(one)
             if one:
                 self.__write_cable.write_one()
             else:

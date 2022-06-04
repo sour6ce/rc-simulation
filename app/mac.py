@@ -25,18 +25,10 @@ class IPDataEater(DataEater):
                  ):
         super().__init__(frame_end_feedback, data_insertion_feedback)
 
-        self.__ipf = []
-        self.add_frame_end_callback(
-            lambda: [c() for c in self.__ipf if callable(c)])
-
-    def add_package_arrival_callback(self, call: Callable):
-        self.__ipf.append(call)
-
-    def remove_package_arrival_callback(self, call: Callable):
-        self.__ipf.remove(call)
-
     def ispackage(self) -> bool:
         data = self.get_data()
+        if data is None:
+            return False
         return isippkg(data[0], data[1])
 
 
@@ -45,7 +37,7 @@ class MACElement(PortedElement):
                  nports: int | str, *args, data_eater_type: Type[IPDataEater] = IPDataEater, **kwargs):
         super().__init__(name, sim_context, nports,
                          data_eater_type=IPDataEater, *args, **kwargs)
-
+        nports = int(nports)
         self.__mac = [randint(0, BROADCAST_MAC-1) for i in range(nports)]
         self.__ip: List[IP] = [(0, 0, 0, 0) for i in range(nports)]
         self.__masks: List[IP] = [(0, 0, 0, 0) for i in range(nports)]

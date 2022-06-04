@@ -57,6 +57,16 @@ def create_element(type_name: str, name: str, *params, **kwargs) -> SimElement:
     return sim_context.elements[-1]
 
 
+def delete_element(name: str) -> bool:
+    element = get_element_byname(name)
+    if element is None:
+        return False
+    element.dispose()
+    Application.instance.simulation.elements.remove(element)
+    del(element)
+    return True
+
+
 def schedule_command(time: int, cmd: str, *params, early=True) -> SubCommand:
     time = Application.instance.simulation.time+int(time)
     cmd = str(cmd)

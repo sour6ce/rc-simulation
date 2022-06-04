@@ -222,6 +222,9 @@ class SimElement(abc.ABC):
         '''
         pass
 
+    def dispose(self):
+        pass
+
     def output(self, text, suffix=''):
         '''
             Add text to the output of the element in the correct file and directory

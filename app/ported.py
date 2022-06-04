@@ -3,7 +3,7 @@ from app.timer import Timer
 from typing import Iterable, List
 from app.core.main import Application, SimContext, SimElement
 from app.port import Port
-from app.extensions import create_element, get_element_byname
+from app.extensions import create_element, delete_element, get_element_byname
 
 
 def isported(element: SimElement) -> bool:
@@ -22,18 +22,6 @@ def get_ports_byname(port: str) -> Iterable[Port]:
 
 def get_port_byname(port: str) -> Port | None:
     return next(get_ports_byname(port), None)
-
-
-def delete_element(name: str) -> bool:
-    element = get_element_byname(name)
-    if element is None:
-        return False
-    if isported(element):
-        ports: List[Port] = element.get_ports()
-        [p.disconnect() for p in ports]
-    Application.instance.simulation.elements.remove(element)
-    del(element)
-    return True
 
 
 class PortedElement(SimElement):
@@ -80,6 +68,10 @@ class PortedElement(SimElement):
                     data_timeout_timer(port))
                 port.add_data_recieve_started_callback(
                     data_timeout_timer(port))
+
+    def dispose(self):
+        for p in self.get_ports():
+            p.disconnect()
 
     def get_ports(self) -> List[Port]:
         return self.__ports

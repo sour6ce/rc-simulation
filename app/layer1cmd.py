@@ -1,6 +1,6 @@
 from typing import List
 from app.core.main import Application, CommandDef, PluginInit1, SimContext, SimElement
-from app.ported import PortedElement, delete_element, get_port_byname, isported
+from app.ported import PortedElement, get_port_byname, isported
 from app.exceptions import InvalidScriptParameter, MissingElement
 from app.bitwork import itoil, uint
 from app.port import Port
@@ -30,7 +30,7 @@ class SendCMD(CommandDef):
                     port = host.get_ports()[int(portindex)]
         if (port is None):
             raise InvalidScriptParameter(f"Wasn't given a valid host or port")
-        if port.sending():
+        if port.sending() or not port.isconnected():
             sime.schedule_command(
                 Application.instance.config['signal_time'], 'send',
                 port, data, *params, early=False
@@ -54,7 +54,6 @@ class SendCMD(CommandDef):
                         v > 0) else '0' for v in l[1:])),
                     *params
                 )
-            delete_element(name[0])
 
         timer: Timer = sime.create_element(
             'timer', name[0],
