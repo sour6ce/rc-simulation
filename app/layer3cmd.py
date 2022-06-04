@@ -54,20 +54,18 @@ class RouteCMD(CommandDef):
         gateway = uip(gateway)
         interface = int(interface)
         if not isinstance(element, PortedElement):
-            element_n=get_element_byname(element)
+            element_n = get_element_byname(element)
         if (element_n is None):
             raise InvalidScriptParameter(MissingElement(element))
         try:
             table: RouteTable = element_n.route_table
-            if op=='add':
-                table.add(dest,mask,gateway,interface-1)
-            elif op=='delete':
-                table.remove(dest,mask,gateway,interface-1)
+            if op == 'add':
+                table.add(dest, mask, gateway, interface-1)
+            elif op == 'delete':
+                table.remove(dest, mask, gateway, interface-1)
         except AttributeError:
             raise InvalidScriptParameter(
                 f"{element_n} doesn't have a route table")
-            
-    
 
 
 class Init(PluginInit1):

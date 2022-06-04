@@ -42,7 +42,7 @@ class PortedElement(SimElement):
         SimElement.__init__(self, name, sim_context,
                             nports, *args, **kwargs)
 
-        self.__ports = [Port(self.name+'_'+str(i+1),data_eater_type)
+        self.__ports = [Port(self.name+'_'+str(i+1), data_eater_type)
                         for i in range(int(nports))]
 
         def get_timeout_callback(port: Port):

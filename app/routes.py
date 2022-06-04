@@ -68,6 +68,7 @@ def get_dict_from_instance(route_tuple: RouteTableInstance):
     r['interface'] = route_tuple[3]
     return r
 
+
 def cast_route(destination, mask, gateway, interface) -> RouteTableInstance:
     return (uip(destination),
             umask(mask),

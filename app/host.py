@@ -9,8 +9,6 @@ from app.ported import PortedElement
 from app.bitwork import byteFormat
 from app.routes import RouteTable, get_dict_from_instance
 
-# TODO: Implement protocol
-
 
 class PC(MACElement):
     def __init__(self, name: str, sim_context, *args, **kwargs):

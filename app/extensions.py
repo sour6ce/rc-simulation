@@ -5,13 +5,15 @@ from app.exceptions import MissingElementDefinition
 
 LOAD_ORDER = -1
 
-def get_element_with_interface(name: str) -> Tuple[SimElement,int|None]:
-    interface=None
-    ind=name.find(':')
-    if ind!=-1:
-        interface=int(name[ind+1:])
-        name=name[:ind]
-    return (get_element_byname(name),interface)
+
+def get_element_with_interface(name: str) -> Tuple[SimElement, int | None]:
+    interface = None
+    ind = name.find(':')
+    if ind != -1:
+        interface = int(name[ind+1:])
+        name = name[:ind]
+    return (get_element_byname(name), interface)
+
 
 def get_commanddef_byname(name: str) -> CommandDef | None:
     cmd: CommandDef | None = Application.instance.commands[name] if name in \

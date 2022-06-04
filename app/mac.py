@@ -56,7 +56,7 @@ class MACElement(PortedElement):
             def pure():
                 self.__try_read_arpr(port[0])
             return pure
-        
+
         def callback_for_arpq(port: List[int]) -> Callable:
             def pure():
                 self.__try_read_arpq(port[0])
@@ -87,14 +87,15 @@ class MACElement(PortedElement):
             ip = getARPIP(data[0], data[1])
             self.ip_cache[ip] = de.get_origin_mac()[0]
             self.__update_address(ip, port)
-            
+
     def __try_read_arpq(self, port: int) -> None:
         de = self.get_ports()[port].get_data_eater()
         data = de.get_data()
         if isdataARPQ(data[0], data[1]):
             ip = getARPIP(data[0], data[1])
-            if ip==self.get_ip(port):
-                frame = build_arpr(self.get_mac(port),de.get_origin_mac()[0], ip)
+            if ip == self.get_ip(port):
+                frame = build_arpr(self.get_mac(
+                    port), de.get_origin_mac()[0], ip)
                 execute_command(
                     'send',
                     self.get_ports()[port],
