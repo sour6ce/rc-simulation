@@ -45,9 +45,8 @@ class Switch(PortedElement):
         self.table[de.get_origin_mac()[0]] = input_index
 
         port = -1
-        t = de.get_target_mac()
-        if t[0] in self.table.keys():
-            port = self.table[t[0]]
+        t = de.get_target_mac()[0]
+        port = self.port_from_mac(t)
         frame = (de.get_current_data(), len(de))
         tup = (itoil(frame[0], frame[1]), port, input_index)
         self.__fqueue.put(tup)
@@ -66,9 +65,9 @@ class Switch(PortedElement):
             # if can_move_frame:
             # self.__fqueue.get()
             frame, port, input = self.__fqueue.get()
-            self.__current = [value+frame if
-                              i == port or (port == -1 and i != input) else value
-                              for i, value in enumerate(self.__current)]
+            for i in range(len(self.__current)):
+                if i == port or (port == -1 and i != input):
+                    self.__current[i] = self.__current[i]+frame
 
     def timer_function(self, l) -> Callable:
         def pure():

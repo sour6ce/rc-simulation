@@ -1,8 +1,9 @@
+from queue import Queue
 from random import randint
 from typing import Callable, Dict, List, Tuple, Type
 from app.arp import build_arpq, build_arpr, getARPIP, isdataARPQ, isdataARPR
 from app.bitwork import byteFormat, itoil
-from app.core.main import SimContext
+from app.core.main import Application, SimContext
 from app.extensions import execute_command
 from app.framing import MAC_BYTESIZE, DataEater
 from app.ip import IP, ip_getnet_ip
@@ -42,7 +43,9 @@ class MACElement(PortedElement):
         self.__ip: List[IP] = [(0, 0, 0, 0) for i in range(nports)]
         self.__masks: List[IP] = [(0, 0, 0, 0) for i in range(nports)]
         self.ip_cache: Dict[IP, int] = {}
-        self.ip_packages: Dict[IP, Tuple[IP, IP, int, int, int, int, int]] = {}
+        self.ip_packages: Dict[IP,
+                               Queue[Tuple[IP, IP, int, int, int, int, int]]] = {}
+        self.last_arp: Dict[IP:int] = {}
 
         def callback_for_arpr(port: List[int]) -> Callable:
             def pure():
@@ -101,55 +104,57 @@ class MACElement(PortedElement):
             return
         if halfway_ip == None:
             halfway_ip = address
-        self.ip_packages[halfway_ip] = (
-            address, origin_ip, port, data, data_len, ttl, protocol)
+        if halfway_ip not in self.ip_packages.keys():
+            self.ip_packages[halfway_ip] = Queue()
+        self.ip_packages[halfway_ip].put((
+            address, origin_ip, port, data, data_len, ttl, protocol))
         self.__update_address(halfway_ip, port)
 
     def __update_address(self, halfway: IP, port: int):
-        if halfway in self.ip_packages.keys():
+        if not self.ip_packages[halfway].empty():
             if (halfway in self.ip_cache.keys()):
                 self.__launch_package(halfway)
             else:
+                if halfway in self.last_arp.keys() and\
+                    (Application.instance.simulation.time-self.last_arp[halfway]) <\
+                        int(Application.instance.config['advanced.arp_skip_threshold']):
+                    return
                 self.__launch_arp(halfway, port)
 
     def __launch_package(self, halfway: IP) -> None:
-        if halfway in self.ip_cache.keys() and \
-                halfway in self.ip_packages.keys():
-            target, origin_ip, port, data, dlen, ttl, protocol = self.ip_packages[halfway]
-            pkg = package_build(
-                target_ip=target,
-                origin_ip=origin_ip,
-                origin_mac=self.get_mac(port),
-                target_mac=self.ip_cache[halfway],
-                ttl=ttl,
-                protocol=protocol,
-                data=data,
-                data_len=dlen
-            )
-            execute_command(
-                'send',
-                self.get_ports()[port],
-                itoil(pkg[0], pkg[1])
-            )
-            self.ip_packages.pop(halfway)
+        if halfway in self.ip_cache.keys():
+            while not self.ip_packages[halfway].empty():
+                target, origin_ip, port, data, dlen, ttl, protocol = self.ip_packages[halfway].get(
+                )
+                pkg = package_build(
+                    target_ip=target,
+                    origin_ip=origin_ip,
+                    origin_mac=self.get_mac(port),
+                    target_mac=self.ip_cache[halfway],
+                    ttl=ttl,
+                    protocol=protocol,
+                    data=data,
+                    data_len=dlen
+                )
+                execute_command(
+                    'send',
+                    self.get_ports()[port],
+                    itoil(pkg[0], pkg[1])
+                )
 
     def __launch_arp(self, ip: IP, port: int) -> None:
+        self.last_arp[ip] = Application.instance.simulation.time
         frame = build_arpq(self.get_mac(port), ip)
         execute_command(
             'send',
             self.get_ports()[port],
             itoil(frame[0], frame[1]*8)
         )
-        execute_command(
-            'send',
-            self.get_ports()[port],
-            itoil(frame[0], frame[1]*8)
-        )
-        execute_command(
-            'send',
-            self.get_ports()[port],
-            itoil(frame[0], frame[1]*8)
-        )
+        # execute_command(
+        #     'send',
+        #     self.get_ports()[port],
+        #     itoil(frame[0], frame[1]*8)
+        # )
 
     def set_mac(self, mac: int, port: int | Port = 0) -> None:
         if isinstance(port, Port):

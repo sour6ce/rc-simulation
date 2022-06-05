@@ -20,14 +20,13 @@ class Timer(sim.SimElement):
         return 'timer'
 
     def update(self):
-        if self.finished:
-            delete_element(self.name)
-            return
         ctime = Application.instance.simulation.time
         self.curent_time = self.initial_time-(ctime-self.initial_total_time)
         if self.curent_time == 0:
             [c() for c in self.__cb if callable(c)]
             self.finished = True
+            delete_element(self.name)
+            return
 
     def add_time_passed_callback(self, call: Callable) -> None:
         self.__cb.append(call)

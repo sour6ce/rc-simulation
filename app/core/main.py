@@ -183,7 +183,8 @@ class SimContext:
         new_time = sc.time
 
         self.time = new_time
-        for e in self.elements:
+        elements = self.elements.copy()
+        for e in elements:
             e.update()
         for guh in self.app.global_updates_hooks:
             if callable(guh):

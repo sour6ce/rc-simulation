@@ -1,10 +1,13 @@
+import json
 import logging
 import os
 from typing import Callable
 import unittest
-from app.bitwork import byteFormat
+from app.bitwork import byteFormat, itob
 from app.core.main import Application, SimContext
-from app.ported import PortedElement
+from app.mac import IPDataEater
+from app.package import get_package_info
+from app.ported import PortedElement, isported
 from app.port import Port
 
 
@@ -13,7 +16,8 @@ class SimulationTest(unittest.TestCase):
         self.test_name = self.__class__.__name__+"."+methodName
         super().__init__(methodName, *args, **kwargs)
 
-    def init_env(self, wrap_handler: Callable | None = None, missing_directory_ok=False, *args, **kwargs) -> None:
+    def init_env(self, wrap_handler: Callable | None = None, check_data_handler: Callable | None = None,
+                 missing_directory_ok=False, *args, **kwargs) -> None:
         self.tests_folder = os.path.dirname(os.path.realpath(__file__))
         self.test_working_folder = os.path.join(
             self.tests_folder, self.test_name)
@@ -42,8 +46,13 @@ class SimulationTest(unittest.TestCase):
 
         app.load_configuration()
 
+        app.check_data_end = self.check_data
+
         if callable(wrap_handler):
             app.wrap_handler = wrap_handler
+
+        if callable(check_data_handler):
+            app.check_data_end = check_data_handler
 
         app.config.update(**kwargs)
 
@@ -64,8 +73,11 @@ class SimulationTest(unittest.TestCase):
             filename=os.path.join(app.output_dir, 'out.log'),
             level=logging.DEBUG,
             filemode='w',
-            force=True
+            force=True,
+            format='%(levelname)s :: %(message)s'
         )
+
+        os.environ['PYTHONUNBUFFERED'] = '1'
 
         try:
             app.load_script().run_script_preprocessor().compile_script()
@@ -74,6 +86,89 @@ class SimulationTest(unittest.TestCase):
 
     def advance(self):
         return Application.instance.simulation.advance()
+
+    @staticmethod
+    def check_data(e: PortedElement, index: int):
+        if not isported(e):
+            return
+        port = e.get_ports()[index]
+        de = port.get_data_eater()
+        r = {}
+        l1 = {}
+        l1['raw'] = de.get_current_data()
+        l1['data'] = byteFormat(de.get_current_data(), f'$n:{len(de)}', 'b')
+        l1['data_length'] = len(de)
+        r['layer_1'] = l1
+
+        if not de.isfinished():
+            logging.debug(f"{e.name} recieved a data at {Application.instance.simulation.time}ms in port {port}. Data:\n" +
+                          json.dumps(r, ensure_ascii=True, indent=2, sort_keys=True))
+            return
+
+        l2 = {}
+        l2['origin'] = byteFormat(de.get_origin_mac()[0], f'$n:{4}$')
+        l2['target'] = byteFormat(de.get_target_mac()[0], f'$n:{4}$')
+        l2['data_size'] = f'{de.get_data_size()[0]} bytes'
+        l2['data'] = {
+            'raw': de.get_data()[0],
+            'bin': {
+                'value': byteFormat(de.get_data()[0], f'$n:{de.get_data()[1]}$', 'b'),
+                'length': f'{de.get_data()[1]} bits'
+            },
+            'hex': {
+                'value': byteFormat(de.get_data()[0], f'$n:{(de.get_data()[1]+3)//4}$', 'h'),
+                'length': f'{(de.get_data()[1]+3)//4} hex characters'
+            },
+            'bytes': {
+                'value': repr(itob(de.get_data()[0], (de.get_data()[1]+7)//8))[1:],
+                'length': f'{(de.get_data()[1]+7)//8} bytes'
+            }
+        }
+        l2['corrupt'] = 'yes' if de.iscorrupt() else 'no'
+        r['layer_2'] = l2
+
+        try:
+            de: IPDataEater = de
+            de.ispackage()
+        except AttributeError:
+            r['type'] = 'frame'
+            logging.debug(f"{e.name} recieved a data at {Application.instance.simulation.time}ms in port {port}. Data:\n" +
+                          json.dumps(r, ensure_ascii=True, indent=2, sort_keys=True))
+            return
+
+        if not de.ispackage():
+            r['type'] = 'frame'
+            logging.debug(f"{e.name} recieved a data at {Application.instance.simulation.time}ms in port {port}. Data:\n" +
+                          json.dumps(r, ensure_ascii=True, indent=2, sort_keys=True))
+            return
+
+        l3 = get_package_info(l2["data"]['raw'], de.get_data()[1])
+        l3.pop('package')
+        l3.pop('total')
+        l3["data_length"] = l3["data_length"]
+        l3['data'] = {
+            'raw': l3['data'],
+            'bin': {
+                'value': byteFormat(l3['data'], f'$n:{l3["data_length"]}$', 'b'),
+                'length': f'{l3["data_length"]} bits'
+            },
+            'hex': {
+                'value': byteFormat(l3['data'], f'$n:{(l3["data_length"]+3)//4}$', 'h'),
+                'length': f'{(l3["data_length"]+3)//4} hex characters'
+            },
+            'bytes': {
+                'value': repr(itob(l3['data'], (l3["data_length"]+7)//8))[1:],
+                'length': f'{(l3["data_length"]+7)//8} bytes'
+            }
+        }
+        l3.pop("data_length")
+        l3['data_size'] = f'{l3["size"]//8} bytes'
+        l3.pop("size")
+        r['layer_3'] = l3
+        r['type'] = 'packet'
+
+        logging.debug(f"{e.name} recieved a data in port {port}. Data:\n" +
+                      json.dumps(r, ensure_ascii=True, indent=2, sort_keys=True))
 
 
 class Dispenser(PortedElement):

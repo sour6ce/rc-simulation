@@ -1,6 +1,6 @@
 from typing import Callable, List, Type
 from app.core.main import Application, PluginInit1, SimContext
-from app.mac import IPDataEater, MACElement
+from app.mac import BROADCAST_MAC, IPDataEater, MACElement, is_for_me
 from app.package import get_package_info
 from app.routes import RouteTable, get_dict_from_instance
 
@@ -14,8 +14,7 @@ class Router(MACElement):
 
         def callback_package_handler(port: List[int]) -> Callable:
             def pure():
-                self.__handle_package(
-                    self.get_ports()[port[0]].get_data_eater())
+                self.__handle_package([port[0]])
             return pure
 
         [p.get_data_eater().add_frame_end_callback(callback_package_handler([i]))
@@ -28,7 +27,11 @@ class Router(MACElement):
     def update(self):
         pass
 
-    def __handle_package(self, de: IPDataEater):
+    def __handle_package(self, port: List[int]):
+        de: IPDataEater = self.get_ports()[port[0]].get_data_eater()
+        if not is_for_me(de.get_target_mac()[0], self.get_mac(port[0])) and\
+                de.get_target_mac()[1] != BROADCAST_MAC:
+            return
         if de.ispackage():
             pkg = get_package_info(*de.get_data())
             address = pkg['target']

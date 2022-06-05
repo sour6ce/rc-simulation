@@ -1,6 +1,6 @@
 from app.framing import DataEater
 from app.timer import Timer
-from typing import Iterable, List
+from typing import Callable, Iterable, List
 from app.core.main import Application, SimContext, SimElement
 from app.port import Port
 from app.extensions import create_element, delete_element, get_element_byname
@@ -33,6 +33,15 @@ class PortedElement(SimElement):
         self.__ports = [Port(self.name+'_'+str(i+1), data_eater_type)
                         for i in range(int(nports))]
 
+        def get_output_callback(port: List[int]) -> Callable:
+            def pure(*args, **kwargs):
+                try:
+                    a = Application.instance.check_data_end
+                except AttributeError:
+                    return
+                a(self, port[0])
+            return pure
+
         def get_timeout_callback(port: Port):
             def pure(*args, **kwargs):
                 port.get_data_eater().clear()
@@ -51,19 +60,21 @@ class PortedElement(SimElement):
                 timer: Timer = create_element(
                     'timer',
                     f"{port}_timeout_timer",
-                    Application.instance.config['data_input_timeout']
+                    Application.instance.config['advanced.input_timeout']
                 )
                 timer.add_time_passed_callback(get_timeout_callback(port))
             return pure
 
-        for port in self.__ports:
+        for i, port in enumerate(self.__ports):
+            self.get_ports()[i].get_data_eater()\
+                .add_frame_end_callback(get_output_callback([i]))
             port.add_data_send_started_callback(lambda x: self.output(
                 f"{Application.instance.simulation.time} {port} send {'1' if x else '0'}"
             ))
             port.add_data_recieve_started_callback(lambda x: self.output(
                 f"{Application.instance.simulation.time} {port} recieve {'1' if x else '0'}"
             ))
-            if int(Application.instance.config['data_input_timeout']) >= 0:
+            if int(Application.instance.config['advanced.input_timeout']) >= 0:
                 port.add_data_recieve_finished_callback(
                     data_timeout_timer(port))
                 port.add_data_recieve_started_callback(

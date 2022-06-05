@@ -24,3 +24,9 @@ class TestIPNetwork(SimulationTest):
 
         while self.advance():
             pass
+
+    def test_clashlands(self):
+        self.init_env(wrap_handler=self.custom_wrap)
+
+        while self.advance():
+            pass
