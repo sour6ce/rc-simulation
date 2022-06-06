@@ -57,6 +57,9 @@ class PC(MACElement):
                 protocol=protocol
             )
 
+    def ping(self, address: IP):
+        self.send_package(address, 8, 1, protocol=1)
+
     @classmethod
     def get_element_type_name(cls):
         return 'host'

@@ -43,7 +43,7 @@ class SendPacketCMD(CommandDef):
             pc.send_package(address, data[0], data[1])
         except AttributeError:
             raise InvalidScriptParameter(
-                f"{host} doesn't allow sending packages")
+                f"{host} doesn't allow sending packets")
 
 
 class RouteCMD(CommandDef):
@@ -71,8 +71,27 @@ class RouteCMD(CommandDef):
                 f"{element_n} doesn't have a route table")
 
 
+class PingCMD(CommandDef):
+    def run(self, sim_context, host: str | PC, address: str, *params):
+        address: IP = uip(address)
+        if not isinstance(host, PC):
+            host = get_element_byname(str(host))
+        if (host is None):
+            raise InvalidScriptParameter(MissingElement(host))
+        if not isported(host):
+            raise InvalidScriptParameter(
+                f"{host} doesn't have ports to send data")
+        try:
+            pc: PC = host
+            pc.ping(address)
+        except AttributeError:
+            raise InvalidScriptParameter(
+                f"{host} doesn't allow sending ICMP messages")
+
+
 class Init(PluginInit1):
     def run(self, app: Application, *args, **kwargs):
         app.commands['ip'] = IPCMD()
         app.commands['send_packet'] = SendPacketCMD()
         app.commands['route'] = RouteCMD()
+        app.commands['ping'] = PingCMD()

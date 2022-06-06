@@ -30,3 +30,9 @@ class TestIPNetwork(SimulationTest):
 
         while self.advance():
             pass
+
+    def test_ping_pong(self):
+        self.init_env(wrap_handler=self.custom_wrap)
+
+        while self.advance():
+            pass
