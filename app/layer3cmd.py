@@ -72,7 +72,7 @@ class RouteCMD(CommandDef):
 
 
 class PingCMD(CommandDef):
-    def run(self, sim_context, host: str | PC, address: str, *params):
+    def run(self, sim_context, host: str | PC, address: str, count: str|int=4, *params):
         address: IP = uip(address)
         if not isinstance(host, PC):
             host = get_element_byname(str(host))
@@ -83,7 +83,7 @@ class PingCMD(CommandDef):
                 f"{host} doesn't have ports to send data")
         try:
             pc: PC = host
-            pc.ping(address)
+            pc.ping(address,int(count))
         except AttributeError:
             raise InvalidScriptParameter(
                 f"{host} doesn't allow sending ICMP messages")

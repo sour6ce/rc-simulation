@@ -1,5 +1,6 @@
 from random import randint
 from app.core.main import Application, PluginInit1
+from app.extensions import schedule_command
 from app.framing import MAC_BYTESIZE, DataEater
 from app.ip import IP, iptostr
 from app.mac import IPDataEater, MACElement, is_for_me
@@ -26,14 +27,27 @@ class PC(MACElement):
                                  f"{data_str}" +
                                  (f" ERROR" if (de.iscorrupt()) else ""))
                 if (de.ispackage()):
+                    extra = ""
                     data = de.get_data()
                     info = get_package_info(data[0], data[1])
+                    if info['target'] != self.get_ip():
+                        return
                     ip_str = iptostr(info['origin'])
+                    if info['protocol'] == 1:
+                        match info['data']:
+                            case 0:
+                                extra = 'echo reply'
+                            case 3:
+                                extra = 'destination host unreachable'
+                            case 8:
+                                extra = 'echo request'
+                            case 11:
+                                extra = 'time exceeded'
                     data_str = byteFormat(
                         info['data'], f'$n:{(info["data_length"]+3)//4}$')
                     self.output(f"{Application.instance.simulation.time} " +
                                 f"{ip_str} " +
-                                f"{data_str}", "_payload")
+                                f"{data_str} " + extra, "_payload")
 
         port: Port = self.get_ports()[0]
 
@@ -57,8 +71,13 @@ class PC(MACElement):
                 protocol=protocol
             )
 
-    def ping(self, address: IP):
+    def ping(self, address: IP, count: int):
         self.send_package(address, 8, 1, protocol=1)
+        if count <= 1:
+            return
+        else:
+            schedule_command(int(Application.instance.config['ping_delay']), 'ping',
+                             self.name, address, count-1)
 
     @classmethod
     def get_element_type_name(cls):

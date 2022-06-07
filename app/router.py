@@ -35,6 +35,9 @@ class Router(MACElement):
         if de.ispackage():
             pkg = get_package_info(*de.get_data())
             address = pkg['target']
+            if next((i for i, _ in enumerate(self.get_ports())
+                     if pkg['target'] == self.get_ip(i)), None) is not None:
+                return
             data = pkg['data']
             data_len = (pkg['data_length']+7)//8
             match = self.route_table.get_match(address)
@@ -51,6 +54,16 @@ class Router(MACElement):
                     ttl=pkg['ttl'],
                     protocol=pkg['protocol']
                 )
+            else:
+                if pkg['protocol'] == 1 and data == 8:
+                    self.send_direct(
+                        address=pkg['origin'],
+                        origin_ip=pkg['target'],
+                        target_mac=de.get_origin_mac()[0],
+                        data=3,
+                        data_len=1,
+                        protocol=1
+                    )
 
 
 class Init(PluginInit1):

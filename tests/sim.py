@@ -85,7 +85,10 @@ class SimulationTest(unittest.TestCase):
             pass
 
     def advance(self):
-        return Application.instance.simulation.advance()
+        b = Application.instance.simulation.advance()
+        if b is False:
+            Application.instance.close_open_files()
+        return b
 
     @staticmethod
     def check_data(e: PortedElement, index: int):

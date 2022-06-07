@@ -31,6 +31,8 @@ def run_app(*args,**kwargs):
 
     while app.simulation.advance():
         pass
+    
+    Application.instance.close_open_files()
 
 if __name__ == '__main__':
     fire.Fire(run_app)

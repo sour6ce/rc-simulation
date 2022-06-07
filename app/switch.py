@@ -74,7 +74,7 @@ class Switch(PortedElement):
             self.__timers[index] = None
             self.get_ports()[index].end_data()
 
-            self.__current[index] = self.__current[index][1:]
+            self.__current[index].pop(0)
             if len(self.__current[index]) != 0:
                 self.__send_wait(index)
 

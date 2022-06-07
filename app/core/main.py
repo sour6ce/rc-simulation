@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 import os
 import importlib
 import inspect
@@ -7,6 +8,7 @@ from collections.abc import Iterable
 from collections import deque
 import abc
 import os
+from typing import Dict, List
 
 
 class Application:
@@ -24,6 +26,8 @@ class Application:
         self.pre_command_hooks = []  # Hooks to execute before commands loaded
         self.post_command_hooks = []  # Hooks to execute after commands loaded
         self.global_updates_hooks = []  # Hooks to execute on update
+        
+        self.open_files:Dict[str,TextIOWrapper]={}
 
         self.script_file = "script.txt"  # The filename of the script to execute
         self.script = []  # Each line of the script
@@ -37,6 +41,11 @@ class Application:
         self.simulation = SimContext(self)  # Current simulation information
 
         Application.instance = self  # Singleton implementation
+
+    def close_open_files(self):
+        for f in self.open_files.values():
+            f.close()
+        self.open_files.clear()
 
     def resolve_command(self, cmd_name):
         '''
@@ -232,11 +241,14 @@ class SimElement(abc.ABC):
         '''
         output_dir = self.context.app.output_dir
         output_file = os.path.join(output_dir, self.name+f'{suffix}.txt')
-
-        os.makedirs(output_dir, exist_ok=True)
-        out = open(output_file, 'a+')
-        out.write(text+'\n')
-        out.close()
+        
+        if output_file not in Application.instance.open_files.keys():
+            os.makedirs(output_dir, exist_ok=True)
+            if os.path.isfile(output_file):
+                os.remove(output_file)
+            Application.instance.open_files[output_file] = open(output_file, 'a+')
+            
+        Application.instance.open_files[output_file].write(text+'\n')
 
     def data_output(self, text):
         self.output(text, suffix='_data')

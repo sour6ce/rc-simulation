@@ -49,12 +49,17 @@ class MACElement(PortedElement):
 
         def callback_for_arpr(port: List[int]) -> Callable:
             def pure():
-                self.__try_read_arpr(port[0])
+                self.__try_read_arpr(port)
             return pure
 
         def callback_for_arpq(port: List[int]) -> Callable:
             def pure():
-                self.__try_read_arpq(port[0])
+                self.__try_read_arpq(port)
+            return pure
+
+        def callback_for_pingr(port: List[int]) -> Callable:
+            def pure():
+                self.__ping_response(port)
             return pure
 
         def callback_smart_ip_cache(port: List[int]) -> Callable:
@@ -74,26 +79,42 @@ class MACElement(PortedElement):
             de.add_frame_end_callback(callback_for_arpr([i]))
             de.add_frame_end_callback(callback_for_arpq([i]))
             de.add_frame_end_callback(callback_smart_ip_cache([i]))
+            de.add_frame_end_callback(callback_for_pingr([i]))
 
-    def __try_read_arpr(self, port: int) -> None:
-        de = self.get_ports()[port].get_data_eater()
+    def __ping_response(self, port: List[int]) -> None:
+        de: IPDataEater = self.get_ports()[port[0]].get_data_eater()
+        if not (is_for_me(self.get_mac(), de.get_target_mac()[port[0]])):
+            return
+        if (de.ispackage()):
+            data = de.get_data()
+            info = get_package_info(data[0], data[1])
+            if next((i for i, _ in enumerate(self.get_ports())
+                     if info['target'] == self.get_ip(i)), None) is None:
+                return
+            if info['protocol'] == 1 and info['data'] == 8:
+                self.send_direct(info['origin'], info['target'],
+                                 de.get_origin_mac()[0], port[0], 0, 1,
+                                 protocol=1)
+
+    def __try_read_arpr(self, port: List[int]) -> None:
+        de = self.get_ports()[port[0]].get_data_eater()
         data = de.get_data()
         if isdataARPR(data[0], data[1]):
             ip = getARPIP(data[0], data[1])
             self.ip_cache[ip] = de.get_origin_mac()[0]
-            self.__update_address(ip, port)
+            self.__update_address(ip, port[0])
 
-    def __try_read_arpq(self, port: int) -> None:
-        de = self.get_ports()[port].get_data_eater()
+    def __try_read_arpq(self, port: List[int]) -> None:
+        de = self.get_ports()[port[0]].get_data_eater()
         data = de.get_data()
         if isdataARPQ(data[0], data[1]):
             ip = getARPIP(data[0], data[1])
-            if ip == self.get_ip(port):
+            if ip == self.get_ip(port[0]):
                 frame = build_arpr(self.get_mac(
-                    port), de.get_origin_mac()[0], ip)
+                    port[0]), de.get_origin_mac()[0], ip)
                 execute_command(
                     'send',
-                    self.get_ports()[port],
+                    self.get_ports()[port[0]],
                     (frame[0], frame[1]*8)
                 )
 
@@ -109,6 +130,25 @@ class MACElement(PortedElement):
         self.ip_packages[halfway_ip].put((
             address, origin_ip, port, data, data_len, ttl, protocol))
         self.__update_address(halfway_ip, port)
+
+    def send_direct(self, address: IP, origin_ip: IP, target_mac: int, port: int,
+                    data: int, data_len: int,
+                    ttl: int = 0, protocol: int = 0) -> None:
+        pkg = package_build(
+            target_ip=address,
+            origin_ip=origin_ip,
+            origin_mac=self.get_mac(port),
+            target_mac=target_mac,
+            ttl=ttl,
+            protocol=protocol,
+            data=data,
+            data_len=data_len
+        )
+        execute_command(
+            'send',
+            self.get_ports()[port],
+            (pkg[0], pkg[1])
+        )
 
     def __update_address(self, halfway: IP, port: int):
         if not self.ip_packages[halfway].empty():
@@ -126,21 +166,15 @@ class MACElement(PortedElement):
             while not self.ip_packages[halfway].empty():
                 target, origin_ip, port, data, dlen, ttl, protocol = self.ip_packages[halfway].get(
                 )
-                pkg = package_build(
-                    target_ip=target,
-                    origin_ip=origin_ip,
-                    origin_mac=self.get_mac(port),
-                    target_mac=self.ip_cache[halfway],
-                    ttl=ttl,
-                    protocol=protocol,
-                    data=data,
-                    data_len=dlen
-                )
-                execute_command(
-                    'send',
-                    self.get_ports()[port],
-                    (pkg[0], pkg[1])
-                )
+                self.send_direct(
+                    target,
+                    origin_ip,
+                    self.ip_cache[halfway],
+                    port,
+                    data,
+                    dlen,
+                    ttl,
+                    protocol)
 
     def __launch_arp(self, ip: IP, port: int) -> None:
         self.last_arp[ip] = Application.instance.simulation.time
