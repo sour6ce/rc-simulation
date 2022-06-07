@@ -60,7 +60,7 @@ def ip_is_mask(ip: IP | int) -> bool:
     if (isinstance(ip, int)):
         return ip >= 0 and ip <= 30
     n = iptoi(uip(ip))
-    bl = itobl(n)
+    bl = list(itobl(n))
     return bit_size(n) == 32 and \
         all(sum(1 for v in bl[:i] if not v) ==
             0 for i, j in enumerate(bl) if j) and \
@@ -79,7 +79,7 @@ def umask(mask: IP | int) -> IP:
 
 def ip_maskton(mask: IP) -> int:
     mask = umask(mask)
-    return sum(itoil(iptoi(mask)))
+    return iptoi(mask).bit_count()
 
 
 def ip_trivial_mask(ip: IP) -> IP:

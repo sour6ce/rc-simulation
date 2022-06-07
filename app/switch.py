@@ -1,10 +1,9 @@
 from queue import Queue
-from typing import Callable, List, Tuple
+from typing import Callable, List
 from app.bitwork import itoil
 from app.core.main import Application, PluginInit1, SimContext
 from app.extensions import create_element
 from app.mac import BROADCAST_MAC
-from app.port import Port
 from app.ported import PortedElement
 from app.framing import DataEater
 from app.timer import Timer
@@ -48,7 +47,7 @@ class Switch(PortedElement):
         t = de.get_target_mac()[0]
         port = self.port_from_mac(t)
         frame = (de.get_current_data(), len(de))
-        tup = (itoil(frame[0], frame[1]), port, input_index)
+        tup = (list(itoil(frame[0], frame[1])), port, input_index)
         self.__fqueue.put(tup)
         self.update_output()
         self.update_send()

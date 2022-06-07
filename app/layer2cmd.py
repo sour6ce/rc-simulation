@@ -1,4 +1,3 @@
-from app.bitwork import itoil
 from app.core.main import Application, CommandDef, PluginInit1
 from app.exceptions import InvalidScriptParameter, MissingElement
 from app.extensions import execute_command, get_element_byname, get_element_with_interface
@@ -10,17 +9,17 @@ from app.ported import isported, PortedElement
 
 
 class MacCMD(CommandDef):
-    def run(self, sim_context, element: str | MACElement , address: str | int, *params):
+    def run(self, sim_context, element: str | MACElement, address: str | int, *params):
         address = int(address, 16)
         if not isinstance(element, PortedElement):
-            element,interface = get_element_with_interface(str(element))
+            element, interface = get_element_with_interface(str(element))
         if (element is None):
             raise InvalidScriptParameter(MissingElement(element))
         try:
             if interface is None:
                 element.set_mac(address)
             else:
-                element.set_mac(address,interface-1)
+                element.set_mac(address, interface-1)
         except AttributeError:
             raise InvalidScriptParameter(
                 f"{element} doesn't allow mac asignation")
@@ -46,7 +45,7 @@ class SendFrameCMD(CommandDef):
 
         frame = frame_build(mac, host.get_mac(), data, (data_len+1)//2)
 
-        execute_command('send', host.name, itoil(frame[0], frame[1]))
+        execute_command('send', host.name, (frame[0], frame[1]), *params)
 
 
 class Init(PluginInit1):

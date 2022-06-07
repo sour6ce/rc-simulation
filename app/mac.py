@@ -2,7 +2,7 @@ from queue import Queue
 from random import randint
 from typing import Callable, Dict, List, Tuple, Type
 from app.arp import build_arpq, build_arpr, getARPIP, isdataARPQ, isdataARPR
-from app.bitwork import byteFormat, itoil
+from app.bitwork import byteFormat
 from app.core.main import Application, SimContext
 from app.extensions import execute_command
 from app.framing import MAC_BYTESIZE, DataEater
@@ -94,7 +94,7 @@ class MACElement(PortedElement):
                 execute_command(
                     'send',
                     self.get_ports()[port],
-                    itoil(frame[0], frame[1]*8)
+                    (frame[0], frame[1]*8)
                 )
 
     def add_package(self, address: IP, origin_ip: IP, port: int,
@@ -139,7 +139,7 @@ class MACElement(PortedElement):
                 execute_command(
                     'send',
                     self.get_ports()[port],
-                    itoil(pkg[0], pkg[1])
+                    (pkg[0], pkg[1])
                 )
 
     def __launch_arp(self, ip: IP, port: int) -> None:
@@ -148,7 +148,7 @@ class MACElement(PortedElement):
         execute_command(
             'send',
             self.get_ports()[port],
-            itoil(frame[0], frame[1]*8)
+            (frame[0], frame[1]*8)
         )
         # execute_command(
         #     'send',

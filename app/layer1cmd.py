@@ -1,8 +1,9 @@
-from typing import List
+from typing import Tuple
 from app.core.main import Application, CommandDef, PluginInit1, SimContext, SimElement
+from app.ip import uip
 from app.ported import PortedElement, get_port_byname, isported
 from app.exceptions import InvalidScriptParameter, MissingElement
-from app.bitwork import itoil, uint
+from app.bitwork import bit_get, bit_mask
 from app.port import Port
 import app.extensions as sime
 from app.timer import Timer
@@ -15,7 +16,7 @@ class BlankCMD(CommandDef):
 
 class SendCMD(CommandDef):
     def run(self, sim_context: SimContext, host: PortedElement | Port | str,
-            data: str | List[int] | List[bool] | int, portindex: int = 0, *params):
+            data: str | Tuple[int, int], portindex: int = 0, *params):
         port = None
         if not isinstance(host, PortedElement):
             if isinstance(host, Port):
@@ -36,22 +37,22 @@ class SendCMD(CommandDef):
                 port, data, *params, early=False
             )
             return
-        if len(data) == 0:
+        if isinstance(data, str):
+            data = (uip(data), len(data))
+        if data[1] == 0:
             port.end_data()
             return
-        l = itoil(uint(data), len(data))
 
         timer: SimElement
         name = ['send_timer_port_'+str(port)]
 
         def update_sending():
             port.end_data()
-            if len(l) > 0:
+            if data[1] > 0:
                 sime.execute_command(
                     'send',
                     port,
-                    ''.join(('1' if (v == True) or (
-                        v > 0) else '0' for v in l[1:])),
+                    (data[0] & bit_mask(data[1]-1), data[1]-1),
                     *params
                 )
 
@@ -61,7 +62,7 @@ class SendCMD(CommandDef):
         )
         timer.add_time_passed_callback(update_sending)
 
-        port.send_data(l[0] > 0)
+        port.send_data(bit_get(data[0], 0, data[1]))
 
 
 class ConnectCMD(CommandDef):

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterable, List
 
 
 def uint(n: str | int | List[bool] | List[int] | bytes | None) -> int:
@@ -72,27 +72,16 @@ def byteFormat(n: int, format: str = "$n$", mode: str = 'h') -> str:
     return format[:st]+n+format[en+1:]
 
 
-def itoil(n: int, complete: int | None = None) -> List[int]:
+def itoil(n: int, complete: int | None = None) -> Iterable[int]:
     n = uint(n)
-    r = []
-    while(n > 0):
-        r.append(n & 1)
-        n >>= 1
-    r.reverse()
-    if complete is None or complete == len(r):
-        if len(r) == 0:
-            return [False]
-        else:
-            return r
-    elif complete < len(r):
-        return r[-complete:]
-    else:
-        return ([0]*(complete-len(r)))+r
+    if complete == None:
+        complete = bit_size(n)
+    return (bit_get(n, i, complete) for i in range(complete))
 
 
-def itobl(n: int, complete: int | None = None) -> List[bool]:
+def itobl(n: int, complete: int | None = None) -> Iterable[bool]:
     n = uint(n)
-    return [False if v <= 0 else True for v in itoil(n, complete)]
+    return (False if v <= 0 else True for v in itoil(n, complete))
 
 
 def itob(n: int, complete: int | None = None) -> bytes:
@@ -112,7 +101,7 @@ def itob(n: int, complete: int | None = None) -> bytes:
 
 
 def bit_size(n: int) -> int:
-    return uint(n).bit_length() if n>0 else 1
+    return uint(n).bit_length() if n > 0 else 1
 
 
 def bit_append(a: int, b: int, b_size: int | None = None) -> int:
@@ -123,26 +112,27 @@ def bit_append(a: int, b: int, b_size: int | None = None) -> int:
 
 def bit_reverse(n: int) -> int:
     n = uint(n)
-    r = itoil(n)
+    r = list(itoil(n))
     r.reverse()
     return uint(n)
 
 
 def bit_sub(n: int, start: int | None = None, end: int | None = None) -> int:
     n = uint(n)
-    return (uint(itoil(n)[start:end]))
+    return (uint(list(itoil(n))[start:end]))
 
 
-def bit_get(n: int, index: int = 0) -> int:
-    n = uint(n)
-    return itoil(n, index+1)
+def bit_get(n: int, index: int = 0, complete: int = -1) -> int:
+    complete = complete if complete > 1 else bit_size(n)
+    way = (complete-index-1)
+    return (n >> way) & 1
 
 
 def bit_set(n: int, index: int = 0, v: bool | int | None = 1) -> int:
     n = uint(n)
     match v:
         case int():
-            a = itoil(n)
+            a = list(itoil(n))
             a[index] = v
             return uint(a)
         case True:
@@ -157,7 +147,7 @@ def bit_set(n: int, index: int = 0, v: bool | int | None = 1) -> int:
 
 def bit_chop(n: int, allsize: int, section_size: int, end: int) -> int:
     rest = allsize-end
-    return (n & (uint((section_size)*'1') << rest)) >> rest
+    return (n >> rest) & bit_mask(section_size)
 
 
 def bit_mask(size: int) -> int:
@@ -166,5 +156,5 @@ def bit_mask(size: int) -> int:
 
 def bit_negate(n: int) -> int:
     n = uint(n)
-    n = itobl(n)
+    n = list(itobl(n))
     return uint([not v for v in n])
